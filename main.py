@@ -188,11 +188,12 @@ def schedule_matches():
                     group = leftovers
                 elif game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles" and len(used_players) >= 2:
                     candidates = [p for p in used_players if p not in st.session_state.recent_ad]
-                    if len(candidates) < 2:
-                        candidates = list(used_players)
-                    picks = random.sample(candidates, 2)
-                    st.session_state.recent_ad = set(picks + leftovers)
-                    group = leftovers + picks
+                    if len(candidates) >= 2:
+                        picks = random.sample(candidates, 2)
+                        st.session_state.recent_ad = set(picks + leftovers)
+                        group = leftovers + picks
+                    else:
+                        group = leftovers
                 else:
                     group = leftovers
                 matches.append((court, group))
@@ -226,7 +227,7 @@ def schedule_matches():
                     placeholder.markdown(f"<div class='big-clock'>{mins:02d}:{secs:02d}</div>", unsafe_allow_html=True)
                     time.sleep(1)
                 placeholder.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
-                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
+                st.markdown(ALERT_SOUND, unsafe_require_html=True)
                 st.success("Time's up!")
         else:
             if st.button("Begin Fast Four"):
