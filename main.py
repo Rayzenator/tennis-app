@@ -107,7 +107,7 @@ def sidebar_management():
                 save_data()
 
 # Export helpers
- def generate_pdf(matches, rnd):
+def generate_pdf(matches, rnd):
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
     w, h = letter
