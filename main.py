@@ -180,27 +180,34 @@ def schedule_matches():
         # Handle leftover
         leftovers = players
         if leftovers:
-            if courts:
-                court = courts.pop(0)
-                # American Doubles fairness first
-                if game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles" and len(used) >= 2:
-                    # choose from used excluding recent
+            if game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles":
+                # Insert into existing singles match to form AD
+                inserted = False
+                for idx, (court, grp) in enumerate(matches):
+                    if len(grp) == 2:  # must be a singles match
+                        # Check if any player in grp was in recent_ad
+                        if not any(p in st.session_state.recent_ad for p in grp):
+                            new_grp = grp + leftovers
+                            matches[idx] = (court, new_grp)
+                            st.session_state.recent_ad = set(new_grp)
+                            inserted = True
+                            break
+                if not inserted and courts:
+                    court = courts.pop(0)
+                    # fallback to normal AD match
                     candidates = [p for p in used if p not in st.session_state.recent_ad]
                     if len(candidates) < 2:
                         candidates = list(used)
                     picks = random.sample(candidates, 2)
                     st.session_state.recent_ad = set(picks + leftovers)
                     grp = leftovers + picks
-                elif format_opt == "Fast Four":
-                    grp = leftovers
-                else:
-                    grp = leftovers
+                    matches.append((court, grp))
+                elif not inserted:
+                    matches.append(("Rest", leftovers))
+            elif courts:
+                court = courts.pop(0)
+                grp = leftovers
                 matches.append((court, grp))
-                if len(grp) > 1:
-                    for i in range(len(grp)):
-                        for j in range(i+1, len(grp)):
-                            st.session_state.history[grp[i]][grp[j]] += 1
-                            st.session_state.history[grp[j]][grp[i]] += 1
             else:
                 matches.append(("Rest", leftovers))
 
