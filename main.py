@@ -264,7 +264,23 @@ def schedule_matches():
         # Exports
         st.download_button("PDF", data=generate_pdf(cr,r), file_name=f"round_{r}.pdf")
         st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
-
+    
+    # Show History
+    if st.checkbox("Show Player Pairing History"):
+    st.subheader("Player Pairing History")
+    players = st.session_state.players
+    data = []
+    for p1 in players:
+        row = []
+        for p2 in players:
+            if p1 == p2:
+                row.append("-")
+            else:
+                row.append(st.session_state.history[p1][p2])
+        data.append(row)
+    df = pd.DataFrame(data, index=players, columns=players)
+    st.dataframe(df)
+    
     # Navigation & reset
     c1, c2, c3 = st.columns(3)
     if c1.button("Previous Round") and st.session_state.round > 1:
