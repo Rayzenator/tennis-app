@@ -67,6 +67,14 @@ def sidebar_management():
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
             st.header("Courts")
+            from streamlit_sortables import sort_items
+            st.markdown("Drag to reorder:")
+            new_order = sort_items(st.session_state.courts, direction="vertical")
+            if new_order != st.session_state.courts:
+                st.session_state.courts = new_order
+                save_data()
+            
+            # Show remove buttons separately
             for i, court in enumerate(st.session_state.courts):
                 c1, c2 = st.columns([8, 1])
                 c1.write(court)
