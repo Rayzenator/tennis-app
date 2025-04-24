@@ -267,19 +267,19 @@ def schedule_matches():
     
     # Show History
     if st.checkbox("Show Player Pairing History"):
-    st.subheader("Player Pairing History")
-    players = st.session_state.players
-    data = []
-    for p1 in players:
-        row = []
-        for p2 in players:
-            if p1 == p2:
-                row.append("-")
-            else:
-                row.append(st.session_state.history[p1][p2])
-        data.append(row)
-    df = pd.DataFrame(data, index=players, columns=players)
-    st.dataframe(df)
+        st.subheader("Player Pairing History")
+        players = st.session_state.players
+        data = []
+        for p1 in players:
+            row = []
+            for p2 in players:
+                if p1 == p2:
+                    row.append("-")
+                else:
+                    row.append(st.session_state.history[p1][p2])
+            data.append(row)
+        df = pd.DataFrame(data, index=players, columns=players)
+        st.dataframe(df)
     
     # Navigation & reset
     c1, c2, c3 = st.columns(3)
