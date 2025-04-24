@@ -174,53 +174,63 @@ def schedule_matches():
             st.warning("Not enough courts to schedule all matches.")
 
         # Schedule full matches
+        full_matches = []
         while courts and len(players) >= req:
             grp = players[:req]
             players = players[req:]
             court = courts.pop(0)
-            matches.append((court, grp))
+            full_matches.append((court, grp))
             used.update(grp)
             for i in range(len(grp)):
                 for j in range(i+1, len(grp)):
                     st.session_state.history[grp[i]][grp[j]] += 1
                     st.session_state.history[grp[j]][grp[i]] += 1
 
-        # Handle leftover
+        # Handle leftover (1 extra player in doubles case with Play American Doubles)
         leftovers = players
-        if leftovers:
-            if game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles":
-                # Insert into existing singles match to form AD
-                inserted = False
-                for idx, (court, grp) in enumerate(matches):
-                    if len(grp) == 2:  # must be a singles match
-                        # Check if any player in grp was in recent_ad
-                        if not any(p in st.session_state.recent_ad for p in grp):
-                            new_grp = grp + leftovers
-                            matches[idx] = (court, new_grp)
-                            st.session_state.recent_ad = set(new_grp)
-                            inserted = True
-                            break
-                if not inserted and courts:
-                    court = courts.pop(0)
-                    # fallback to normal AD match
-                    candidates = [p for p in used if p not in st.session_state.recent_ad]
-                    if len(candidates) < 2:
-                        candidates = list(used)
-                    picks = random.sample(candidates, 2)
-                    st.session_state.recent_ad = set(picks + leftovers)
-                    grp = leftovers + picks
-                    matches.append((court, grp))
-                elif not inserted:
-                    matches.append(("Rest", leftovers))
-            elif courts:
-                court = courts.pop(0)
-                grp = leftovers
-                matches.append((court, grp))
-            else:
-                matches.append(("Rest", leftovers))
+        if game_type == "Doubles" and leftover_opt == "Play American Doubles" and len(leftovers) == 1:
+            if len(full_matches) >= 2:
+                # Convert one full match to Singles (take 2 from it)
+                match_to_singles = full_matches.pop()
+                p1, p2, *_ = match_to_singles[1]
+                singles_grp = [p1, p2]
+                full_matches.append((match_to_singles[0], singles_grp))
 
-        st.session_state.schedule.append(matches)
-        st.session_state.round = len(st.session_state.schedule)
+                # Add 1 leftover + 2 from another match to make American Doubles
+                match_to_split = full_matches.pop()
+                others = [p for p in match_to_split[1] if p not in singles_grp][:2]
+                ad_grp = leftovers + others
+                full_matches.append((match_to_split[0], ad_grp))
+                used.update(ad_grp + singles_grp)
+                for i in range(len(ad_grp)):
+                    for j in range(i+1, len(ad_grp)):
+                        st.session_state.history[ad_grp[i]][ad_grp[j]] += 1
+                        st.session_state.history[ad_grp[j]][ad_grp[i]] += 1
+                for i in range(len(singles_grp)):
+                    for j in range(i+1, len(singles_grp)):
+                        st.session_state.history[singles_grp[i]][singles_grp[j]] += 1
+                        st.session_state.history[singles_grp[j]][singles_grp[i]] += 1
+            else:
+                # Fallback to court if available
+                if courts:
+                    court = courts.pop(0)
+                    full_matches.append((court, leftovers))
+                else:
+                    full_matches.append(("Rest", leftovers))
+
+        elif leftovers:
+            if courts:
+                court = courts.pop(0)
+                full_matches.append((court, leftovers))
+                if len(leftovers) > 1:
+                    for i in range(len(leftovers)):
+                        for j in range(i+1, len(leftovers)):
+                            st.session_state.history[leftovers[i]][leftovers[j]] += 1
+                            st.session_state.history[leftovers[j]][leftovers[i]] += 1
+            else:
+                full_matches.append(("Rest", leftovers))
+
+        matches.extend(full_matches)
 
     # Display current round
     if st.session_state.schedule and st.session_state.round > 0:
