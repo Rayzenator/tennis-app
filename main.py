@@ -232,6 +232,9 @@ def schedule_matches():
 
         matches.extend(full_matches)
 
+        st.session_state.schedule.append(matches)
+        st.session_state.round = len(st.session_state.schedule)
+
     # Display current round
     if st.session_state.schedule and st.session_state.round > 0:
         r = st.session_state.round
