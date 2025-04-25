@@ -244,6 +244,19 @@ def schedule_matches():
                 let duration = {match_time} * 60;
                 const countdown = document.getElementById("countdown");
                 const beep = document.getElementById("beep");
+        
+                // Wake Lock logic
+                let wakeLock = null;
+                const requestWakeLock = async () => {{
+                  try {{
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log("Wake Lock is active");
+                  }} catch (err) {{
+                    console.error(`Wake Lock failed: ${{err.name}}, ${{err.message}}`);
+                  }}
+                }};
+                requestWakeLock();
+        
                 const timer = setInterval(() => {{
                     const m = Math.floor(duration / 60);
                     const s = duration % 60;
@@ -257,12 +270,19 @@ def schedule_matches():
                             beep.pause();
                             beep.currentTime = 0;
                         }}, 10000);
+        
+                        // Release Wake Lock
+                        if (wakeLock !== null) {{
+                            wakeLock.release();
+                            wakeLock = null;
+                            console.log("Wake Lock released");
+                        }}
                     }}
                 }}, 1000);
                 </script>
                 """, unsafe_allow_html=True)
         
-                st.success("Countdown running in browser – server is free!")
+                st.success("Countdown running in browser – screen should stay awake!")
         else:
             if st.button("Begin Fast Four"):
                 st.info("Fast Four match: first to 4 games wins.")
