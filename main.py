@@ -246,69 +246,58 @@ def schedule_matches():
             if st.session_state.timer_started:
                 st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
                 st.markdown(f"""
-                <div class='big-clock' id='countdown'>Starting...</div>
-                <audio id="beep" loop>
-                  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
-                </audio>
-                <script>
-                let duration = {match_time} * 60;
-                const countdown = document.getElementById("countdown");
-                const beep = document.getElementById("beep");
-                let stop = false;
-        
-                /* Wake Lock setup */
-                let wakeLock = null;
-                const requestWakeLock = async () => {{
-                  try {{
-                    wakeLock = await navigator.wakeLock.request('screen');
-                  }} catch (err) {{
-                    console.error("Wake Lock failed:", err);
-                  }}
-                }};
-                requestWakeLock();
-        
-                /* Poll Streamlit variable to detect stop */
-                const checkStop = () => {{
-                  fetch(window.location.href)
-                    .then(() => {{
-                      if (!{str(st.session_state.timer_started).lower()}) {{
-                        stop = true;
+                    <div class='big-clock' id='countdown'>Starting...</div>
+                    <audio id="beep" loop>
+                      <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+                    </audio>
+                    <script>
+                    let duration = {match_time} * 60;
+                    const countdown = document.getElementById("countdown");
+                    const beep = document.getElementById("beep");
+                    let stop = false;
+                    
+                    /* Wake Lock setup */
+                    let wakeLock = null;
+                    const requestWakeLock = async () => {{
+                      try {{
+                        wakeLock = await navigator.wakeLock.request('screen');
+                      }} catch (err) {{
+                        console.error("Wake Lock failed:", err);
                       }}
-                    }});
-                }};
-                setInterval(checkStop, 1000);
-        
-                /* Countdown logic */
-                const timer = setInterval(() => {{
-                    if (stop) {{
-                        clearInterval(timer);
-                        countdown.innerHTML = "Stopped";
-                        if (wakeLock !== null) {{
-                            wakeLock.release();
-                            wakeLock = null;
+                    }};
+                    requestWakeLock();
+                    
+                    /* Countdown logic */
+                    const timer = setInterval(() => {{
+                        if (stop) {{
+                            clearInterval(timer);
+                            countdown.innerHTML = "Stopped";
+                            if (wakeLock !== null) {{
+                                wakeLock.release();
+                                wakeLock = null;
+                            }}
+                            return;
                         }}
-                        return;
-                    }}
-                    const m = Math.floor(duration / 60);
-                    const s = duration % 60;
-                    countdown.innerHTML = `${{m.toString().padStart(2, '0')}}:${{s.toString().padStart(2, '0')}}`;
-                    duration--;
-                    if (duration < 0) {{
-                        clearInterval(timer);
-                        countdown.innerHTML = "00:00";
-                        beep.play();
-                        setTimeout(() => {{
-                            beep.pause();
-                            beep.currentTime = 0;
-                        }}, 10000);
-                        if (wakeLock !== null) {{
-                            wakeLock.release();
-                            wakeLock = null;
+                        const m = Math.floor(duration / 60);
+                        const s = duration % 60;
+                        countdown.innerHTML = `${{m.toString().padStart(2, '0')}}:${{s.toString().padStart(2, '0')}}`;
+                        duration--;
+                        if (duration < 0) {{
+                            clearInterval(timer);
+                            countdown.innerHTML = "00:00";
+                            beep.play();
+                            setTimeout(() => {{
+                                beep.pause();
+                                beep.currentTime = 0;
+                            }}, 10000);
+                            if (wakeLock !== null) {{
+                                wakeLock.release();
+                                wakeLock = null;
+                            }}
                         }}
-                    }}
-                }}, 1000);
-                </script>
-                """, unsafe_allow_html=True)
+                    }}, 1000);
+                    </script>
+                    """, unsafe_allow_html=True)
         
                 st.success("Countdown running — your screen should stay awake!")
         else:
