@@ -56,62 +56,83 @@ def generate_csv(matches):
 
 def sidebar_management():
     with st.sidebar:
-        st.header("Edit Mode")
-        edit_button = st.button("Edit Courts and Players")
+        tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
         
-        if edit_button:
-            st.session_state.edit_mode = True
-        else:
-            st.session_state.edit_mode = False
+        # Manage Courts
+        with tab1:
+            if 'courts' not in st.session_state:
+                st.session_state.courts = []
+            st.header("Courts")
+            st.markdown("Drag to reorder:")
 
-        if st.session_state.edit_mode:
-            tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
-            with tab1:
-                if 'courts' not in st.session_state:
-                    st.session_state.courts = []
-                st.header("Courts")
-                st.markdown("Drag to reorder:")
-                new_order = sort_items(st.session_state.courts, direction="vertical")
-                if new_order != st.session_state.courts:
-                    st.session_state.courts = new_order
+            # Reorder courts
+            new_order = sort_items(st.session_state.courts, direction="vertical")
+            if new_order != st.session_state.courts:
+                st.session_state.courts = new_order
+                save_data()
+
+            for i, court in enumerate(st.session_state.courts):
+                c1, c2 = st.columns([8, 1])
+                c1.write(court)
+
+                # Edit Button (Pencil Icon)
+                if c2.button("✏️", key=f"edit_court_{i}"):
+                    new_name = st.text_input(f"Edit Court {court}", value=court)
+                    if st.button("Save"):
+                        st.session_state.courts[i] = new_name
+                        save_data()
+
+                # Remove Court Button
+                if c2.button("❌", key=f"rm_court_{i}"):
+                    st.session_state.courts.pop(i)
                     save_data()
 
-                for i, court in enumerate(st.session_state.courts):
-                    c1, c2 = st.columns([8, 1])
-                    c1.write(court)
-                    if c2.button("❌", key=f"rm_court_{i}"):
-                        st.session_state.courts.pop(i)
-                        save_data()
-                new = st.text_input("Add Court", key="court_in")
-                if st.button("Add Court") and new:
-                    if new not in st.session_state.courts:
-                        st.session_state.courts.append(new)
-                        save_data()
-                    else:
-                        st.warning("Court already exists.")
-                if st.button("Reset Courts"):
-                    st.session_state.courts = []
+            # Add new court
+            new = st.text_input("Add Court", key="court_in")
+            if st.button("Add Court") and new:
+                if new not in st.session_state.courts:
+                    st.session_state.courts.append(new)
                     save_data()
-            with tab2:
-                if 'players' not in st.session_state:
-                    st.session_state.players = []
-                st.header("Players")
-                for i, player in enumerate(st.session_state.players):
-                    p1, p2 = st.columns([8, 1])
-                    p1.write(player)
-                    if p2.button("❌", key=f"rm_player_{i}"):
-                        st.session_state.players.pop(i)
+                else:
+                    st.warning("Court already exists.")
+            if st.button("Reset Courts"):
+                st.session_state.courts = []
+                save_data()
+
+        # Manage Players
+        with tab2:
+            if 'players' not in st.session_state:
+                st.session_state.players = []
+            st.header("Players")
+
+            # Edit Players
+            for i, player in enumerate(st.session_state.players):
+                p1, p2 = st.columns([8, 1])
+                p1.write(player)
+
+                # Edit Button (Pencil Icon)
+                if p2.button("✏️", key=f"edit_player_{i}"):
+                    new_name = st.text_input(f"Edit Player {player}", value=player)
+                    if st.button("Save"):
+                        st.session_state.players[i] = new_name
                         save_data()
-                newp = st.text_input("Add Player", key="player_in")
-                if st.button("Add Player") and newp:
-                    if newp not in st.session_state.players:
-                        st.session_state.players.append(newp)
-                        save_data()
-                    else:
-                        st.warning("Player already exists.")
-                if st.button("Reset Players"):
-                    st.session_state.players = []
+
+                # Remove Player Button
+                if p2.button("❌", key=f"rm_player_{i}"):
+                    st.session_state.players.pop(i)
                     save_data()
+
+            # Add new player
+            newp = st.text_input("Add Player", key="player_in")
+            if st.button("Add Player") and newp:
+                if newp not in st.session_state.players:
+                    st.session_state.players.append(newp)
+                    save_data()
+                else:
+                    st.warning("Player already exists.")
+            if st.button("Reset Players"):
+                st.session_state.players = []
+                save_data()
 
         else:
             st.write("You are not in edit mode. Press 'Edit Courts and Players' to manage them.")
