@@ -1,3 +1,4 @@
+import streamlit as st
 import random
 import time
 from collections import defaultdict
@@ -8,14 +9,45 @@ from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
-try:
-    import streamlit as st
-    from streamlit_sortables import sort_items
-    STREAMLIT_AVAILABLE = True
-except ImportError:
-    STREAMLIT_AVAILABLE = False
+# Page configuration and dark mode styling
+st.set_page_config(page_title="Tennis Scheduler", layout="wide")
+DARK_MODE_STYLE = """
+<style>
+body { background-color: #1e1e1e; color: white; }
+.sidebar .sidebar-content { background-color: #2e2e2e; color: white; }
+</style>
+"""
+st.markdown(DARK_MODE_STYLE, unsafe_allow_html=True)
 
+# Clock & alert styles
+CLOCK_STYLE = """
+<style>
+.big-clock {
+    font-size: 72px;
+    font-weight: bold;
+    color: #00FF00;
+    background-color: #000000;
+    padding: 20px;
+    text-align: center;
+    border-radius: 15px;
+}
+</style>
+"""
+ALERT_SOUND = """
+<audio id="beep" autoplay loop>
+  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+  Your browser does not support the audio element.
+</audio>
+<script>
+  const sound = document.getElementById('beep');
+  sound.play();
+  setTimeout(() => { sound.pause(); sound.currentTime = 0; }, 10000);
+</script>
+"""
+
+# Data persistence
 DATA_FILE = "data.json"
+
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -23,11 +55,68 @@ def load_data():
             return json.load(f)
     return {"courts": [], "players": []}
 
+
 def save_data():
     with open(DATA_FILE, 'w') as f:
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
+
+# Sidebar management
+def sidebar_management():
+    with st.sidebar:
+        tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
+        with tab1:
+            if 'courts' not in st.session_state:
+                st.session_state.courts = []
+            st.header("Courts")
+            from streamlit_sortables import sort_items
+            st.markdown("Drag to reorder:")
+            new_order = sort_items(st.session_state.courts, direction="vertical")
+            if new_order != st.session_state.courts:
+                st.session_state.courts = new_order
+                save_data()
+
+            # Show remove buttons separately
+            for i, court in enumerate(st.session_state.courts):
+                c1, c2 = st.columns([8, 1])
+                c1.write(court)
+                if c2.button("❌", key=f"rm_court_{i}"):
+                    st.session_state.courts.pop(i)
+                    save_data()
+            new = st.text_input("Add Court", key="court_in")
+            if st.button("Add Court") and new:
+                if new not in st.session_state.courts:
+                    st.session_state.courts.append(new)
+                    save_data()
+                else:
+                    st.warning("Court already exists.")
+            if st.button("Reset Courts"):
+                st.session_state.courts = []
+                save_data()
+        with tab2:
+            if 'players' not in st.session_state:
+                st.session_state.players = []
+            st.header("Players")
+            for i, player in enumerate(st.session_state.players):
+                p1, p2 = st.columns([8, 1])
+                p1.write(player)
+                if p2.button("❌", key=f"rm_player_{i}"):
+                    st.session_state.players.pop(i)
+                    save_data()
+            newp = st.text_input("Add Player", key="player_in")
+            if st.button("Add Player") and newp:
+                if newp not in st.session_state.players:
+                    st.session_state.players.append(newp)
+                    save_data()
+                else:
+                    st.warning("Player already exists.")
+            if st.button("Reset Players"):
+                st.session_state.players = []
+                save_data()
+
+
+# Export helpers
 def generate_pdf(matches, rnd):
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
@@ -47,6 +136,7 @@ def generate_pdf(matches, rnd):
     buf.seek(0)
     return buf
 
+
 def generate_csv(matches):
     df = pd.DataFrame([(c, ', '.join(players)) for c, players in matches], columns=["Court", "Players"])
     buf = BytesIO()
@@ -54,229 +144,120 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
-def sidebar_management():
-    with st.sidebar:
-        tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
-        
-        # Manage Courts
-        with tab1:
-            if 'courts' not in st.session_state:
-                st.session_state.courts = []
-            st.header("Courts")
-            st.markdown("Drag to reorder:")
 
-            # Reorder courts
-            new_order = sort_items(st.session_state.courts, direction="vertical")
-            if new_order != st.session_state.courts:
-                st.session_state.courts = new_order
-                save_data()
-
-            for i, court in enumerate(st.session_state.courts):
-                c1, c2 = st.columns([8, 1])
-                c1.write(court)
-
-                # Edit Button (Pencil Icon)
-                if c2.button("✏️", key=f"edit_court_{i}"):
-                    new_name = st.text_input(f"Edit Court {court}", value=court)
-                    if st.button("Save"):
-                        st.session_state.courts[i] = new_name
-                        save_data()
-
-                # Remove Court Button
-                if c2.button("❌", key=f"rm_court_{i}"):
-                    st.session_state.courts.pop(i)
-                    save_data()
-
-            # Add new court
-            new = st.text_input("Add Court", key="court_in")
-            if st.button("Add Court") and new:
-                if new not in st.session_state.courts:
-                    st.session_state.courts.append(new)
-                    save_data()
-                else:
-                    st.warning("Court already exists.")
-            if st.button("Reset Courts"):
-                st.session_state.courts = []
-                save_data()
-
-        # Manage Players
-        with tab2:
-            if 'players' not in st.session_state:
-                st.session_state.players = []
-            st.header("Players")
-
-            # Edit Players
-            for i, player in enumerate(st.session_state.players):
-                p1, p2 = st.columns([8, 1])
-                p1.write(player)
-
-                # Edit Button (Pencil Icon)
-                if p2.button("✏️", key=f"edit_player_{i}"):
-                    new_name = st.text_input(f"Edit Player {player}", value=player)
-                    if st.button("Save"):
-                        st.session_state.players[i] = new_name
-                        save_data()
-
-                # Remove Player Button
-                if p2.button("❌", key=f"rm_player_{i}"):
-                    st.session_state.players.pop(i)
-                    save_data()
-
-            # Add new player
-            newp = st.text_input("Add Player", key="player_in")
-            if st.button("Add Player") and newp:
-                if newp not in st.session_state.players:
-                    st.session_state.players.append(newp)
-                    save_data()
-                else:
-                    st.warning("Player already exists.")
-            if st.button("Reset Players"):
-                st.session_state.players = []
-                save_data()
-
-            else:
-                st.write("You are not in edit mode. Press 'Edit Courts and Players' to manage them.")
-        st.markdown("---")
-        st.header("Round Timer")
-        if 'start_time' not in st.session_state:
-            st.session_state.start_time = None
-
-        timer_placeholder = st.empty()
-
-        if st.button("▶️ Start Timer"):
-            st.session_state.start_time = time.time()
-        if st.button("🔁 Reset Timer"):
-            st.session_state.start_time = None
-
-        with timer_placeholder.container():
-            if st.session_state.start_time:
-                while True:
-                    elapsed = int(time.time() - st.session_state.start_time)
-                    mins, secs = divmod(elapsed, 60)
-                    st.markdown(f"## ⏱️ {mins:02}:{secs:02}")
-                    time.sleep(1)
-            else:
-                st.markdown("## ⏱️ 00:00")
-def schedule_round(players, courts, match_type, leftover_action, history, recent_ad):
-    random.shuffle(players)
-    matches = []
-    leftover = []
-
-    if match_type == "Doubles":
-        while len(players) >= 4 and courts:
-            court = courts.pop(0)
-            group = players[:4]
-            players = players[4:]
-            matches.append((court, group))
-        leftover = players
-
-        if leftover_action == "Play American Doubles":
-            if len(leftover) == 1 and len(matches) >= 2:
-                court_to_singles = matches.pop()
-                court_to_ad = matches.pop()
-                matches.append((court_to_singles[0], court_to_singles[1][:2]))
-                ad_group = court_to_ad[1][:3] + [leftover[0]]
-                matches.append(("Extra", ad_group))
-                recent_ad.update(ad_group)
-                leftover = []
-            elif len(leftover) == 2:
-                matches.append(("Extra", leftover))
-                leftover = []
-            elif len(leftover) == 3:
-                matches.append(("Extra", leftover))
-                recent_ad.update(leftover)
-                leftover = []
-
-    elif match_type == "Singles":
-        while len(players) >= 2 and courts:
-            court = courts.pop(0)
-            group = players[:2]
-            players = players[2:]
-            matches.append((court, group))
-        leftover = players
-
-        if leftover_action == "Play American Doubles":
-            if len(leftover) == 1 and matches:
-                for i, (court, group) in enumerate(matches):
-                    if len(group) == 2:
-                        matches[i] = (court, group + [leftover[0]])
-                        recent_ad.add(leftover[0])
-                        leftover = []
-                        break
-
-    for court, group in matches:
-        for i in range(len(group)):
-            for j in range(i + 1, len(group)):
-                p1, p2 = group[i], group[j]
-                history[p1][p2] += 1
-                history[p2][p1] += 1
-
-    return {"matches": matches, "history": history, "recent_ad": recent_ad}
-    
+# Main scheduling logic
 def schedule_matches():
+    # Initialize session state
+    if 'history' not in st.session_state:
+        st.session_state.history = defaultdict(lambda: defaultdict(int))
+    if 'schedule' not in st.session_state:
+        st.session_state.schedule = []
+    if 'round' not in st.session_state:
+        st.session_state.round = 0
+    if 'recent_ad' not in st.session_state:
+        st.session_state.recent_ad = set()
+
     st.header("Schedule Matches")
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
     leftover_opt = st.radio("Leftover Action", ["Rest", "Play American Doubles"])
-
     if format_opt == "Timed":
         match_time = st.number_input("Match Time (minutes)", 5, 60, 15)
     else:
         st.info("Fast Four: first to 4 games wins.")
 
     if st.button("Generate Next Round"):
-        results = schedule_round(
-            st.session_state.players.copy(),
-            st.session_state.courts.copy(),
-            game_type,
-            leftover_opt,
-            st.session_state.get("history", defaultdict(lambda: defaultdict(int))),
-            st.session_state.get("recent_ad", set())
-        )
-        st.session_state.schedule = st.session_state.get("schedule", []) + [results["matches"]]
-        st.session_state.round = len(st.session_state.schedule)
-        st.session_state.history = results["history"]
-        st.session_state.recent_ad = results["recent_ad"]
+        players = st.session_state.players.copy()
+        random.shuffle(players)
+        courts = st.session_state.courts.copy()
+        matches = []
+        used = set()
+        req = 4 if game_type == "Doubles" else 2
 
-    if st.session_state.get("schedule") and st.session_state.get("round", 0) > 0:
+        # Warn if not enough courts
+        maxm = len(players) // req
+        if len(courts) < maxm:
+            st.warning("Not enough courts to schedule all matches.")
+
+        # Schedule full matches
+        while courts and len(players) >= req:
+            grp = players[:req]
+            players = players[req:]
+            court = courts.pop(0)
+            matches.append((court, grp))
+            used.update(grp)
+            for i in range(len(grp)):
+                for j in range(i + 1, len(grp)):
+                    st.session_state.history[grp[i]][grp[j]] += 1
+                    st.session_state.history[grp[j]][grp[i]] += 1
+
+        # Handle leftover
+        leftovers = players
+        if leftovers:
+            if game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles":
+                # Insert into existing singles match to form AD
+                inserted = False
+                for idx, (court, grp) in enumerate(matches):
+                    if len(grp) == 2:  # must be a singles match
+                        # Check if any player in grp was in recent_ad
+                        if not any(p in st.session_state.recent_ad for p in grp):
+                            new_grp = grp + leftovers
+                            matches[idx] = (court, new_grp)
+                            st.session_state.recent_ad = set(new_grp)
+                            inserted = True
+                            break
+                if not inserted and courts:
+                    court = courts.pop(0)
+                    # fallback to normal AD match
+                    candidates = [p for p in used if p not in st.session_state.recent_ad]
+                    if len(candidates) < 2:
+                        candidates = list(used)
+                    picks = random.sample(candidates, 2)
+                    st.session_state.recent_ad = set(picks + leftovers)
+                    grp = leftovers + picks
+                    matches.append((court, grp))
+                elif not inserted:
+                    matches.append(("Rest", leftovers))
+            elif courts:
+                court = courts.pop(0)
+                grp = leftovers
+                matches.append((court, grp))
+            else:
+                matches.append(("Rest", leftovers))
+
+        st.session_state.schedule.append(matches)
+        st.session_state.round = len(st.session_state.schedule)
+
+    # Display current round
+    if st.session_state.schedule and st.session_state.round > 0:
         r = st.session_state.round
         st.subheader(f"Round {r}")
-        cr = st.session_state.schedule[r-1]
+        cr = st.session_state.schedule[r - 1]
         for court, pts in cr:
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
+        # Controls
         if format_opt == "Timed":
             if st.button("Start Play"):
                 total = match_time * 60
+                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
                 pl = st.empty()
                 for t in range(total, 0, -1):
                     m, s = divmod(t, 60)
-                    pl.markdown(f"<h1 style='text-align:center;'>{m:02d}:{s:02d}</h1>", unsafe_allow_html=True)
+                    pl.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
                     time.sleep(1)
-                pl.markdown("<h1 style='text-align:center;'>00:00</h1>", unsafe_allow_html=True)
+                pl.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
+                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
                 st.success("Time's up!")
         else:
             if st.button("Begin Fast Four"):
                 st.info("Fast Four match: first to 4 games wins.")
 
+        # Exports
         st.download_button("PDF", data=generate_pdf(cr, r), file_name=f"round_{r}.pdf")
         st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
 
-    if st.checkbox("Show Player Pairing History"):
-        st.subheader("Player Pairing History")
-        players = st.session_state.players
-        data = []
-        for p1 in players:
-            row = []
-            for p2 in players:
-                if p1 == p2:
-                    row.append("-")
-                else:
-                    row.append(st.session_state.history[p1][p2])
-            data.append(row)
-        df = pd.DataFrame(data, index=players, columns=players)
-        st.dataframe(df)
-
+    # Navigation & reset
     c1, c2, c3 = st.columns(3)
     if c1.button("Previous Round") and st.session_state.round > 1:
         st.session_state.round -= 1
@@ -291,28 +272,13 @@ def schedule_matches():
         st.session_state.round = 0
         st.session_state.recent_ad = set()
 
-def main():
-    st.set_page_config(page_title="Tennis Scheduler", layout="wide")
-    st.markdown("""
-        <style>
-        body { background-color: #1e1e1e; color: white; }
-        .sidebar .sidebar-content { background-color: #2e2e2e; color: white; }
-        </style>
-    """, unsafe_allow_html=True)
 
-    # Initialize session_state attributes if not present
-    if 'initialized' not in st.session_state:
-        d = load_data()
-        st.session_state.courts = d['courts']
-        st.session_state.players = d['players']
-        st.session_state.schedule = []  # Initialize schedule
-        st.session_state.round = 0  # Initialize round
-        st.session_state.history = defaultdict(lambda: defaultdict(int))
-        st.session_state.recent_ad = set()
-        st.session_state.initialized = True
+# Initialize
+if 'initialized' not in st.session_state:
+    d = load_data()
+    st.session_state.courts = d['courts']
+    st.session_state.players = d['players']
+    st.session_state.initialized = True
 
-    sidebar_management()
-    schedule_matches()
-
-if __name__ == "__main__" and STREAMLIT_AVAILABLE:
-    main()
+sidebar_management()
+schedule_matches()
