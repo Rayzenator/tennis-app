@@ -192,7 +192,7 @@ def schedule_round(players, courts, match_type, leftover_action, history, recent
                 history[p2][p1] += 1
 
     return {"matches": matches, "history": history, "recent_ad": recent_ad}
-
+    
 def schedule_matches():
     st.header("Schedule Matches")
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
