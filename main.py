@@ -115,44 +115,7 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
-def display_timer():
-    st.markdown("## Round Timer")
-    if 'start_time' not in st.session_state:
-        st.session_state.start_time = None
 
-    col1, col2 = st.columns(2)
-    if col1.button("▶️ Start Timer"):
-        st.session_state.start_time = time.time()
-        st.experimental_rerun()
-
-    if col2.button("🔁 Reset Timer"):
-        st.session_state.start_time = None
-        st.experimental_rerun()
-
-    timer_placeholder = st.empty()
-    if st.session_state.start_time:
-        elapsed = int(time.time() - st.session_state.start_time)
-        mins, secs = divmod(elapsed, 60)
-        timer_placeholder.markdown(
-            f"""
-            <div style='text-align: center; font-size: 64px; background-color: #111; color: #39FF14; padding: 30px; border-radius: 12px; margin-top: 20px;'>
-                ⏱️ {mins:02}:{secs:02}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        time.sleep(1)
-        st.experimental_rerun()
-    else:
-        timer_placeholder.markdown(
-            """
-            <div style='text-align: center; font-size: 64px; background-color: #111; color: #39FF14; padding: 30px; border-radius: 12px; margin-top: 20px;'>
-                ⏱️ 00:00
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-display_timer()
 
 # Export helpers
 def generate_pdf(matches, rnd):
@@ -294,6 +257,46 @@ def schedule_matches():
         # Exports
         st.download_button("PDF", data=generate_pdf(cr, r), file_name=f"round_{r}.pdf")
         st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
+
+    def display_timer():
+    st.markdown("## Round Timer")
+    if 'start_time' not in st.session_state:
+        st.session_state.start_time = None
+
+    col1, col2 = st.columns(2)
+    if col1.button("▶️ Start Timer"):
+        st.session_state.start_time = time.time()
+        st.experimental_rerun()
+
+    if col2.button("🔁 Reset Timer"):
+        st.session_state.start_time = None
+        st.experimental_rerun()
+
+    timer_placeholder = st.empty()
+    if st.session_state.start_time:
+        elapsed = int(time.time() - st.session_state.start_time)
+        mins, secs = divmod(elapsed, 60)
+        timer_placeholder.markdown(
+            f"""
+            <div style='text-align: center; font-size: 64px; background-color: #111; color: #39FF14; padding: 30px; border-radius: 12px; margin-top: 20px;'>
+                ⏱️ {mins:02}:{secs:02}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        time.sleep(1)
+        st.experimental_rerun()
+    else:
+        timer_placeholder.markdown(
+            """
+            <div style='text-align: center; font-size: 64px; background-color: #111; color: #39FF14; padding: 30px; border-radius: 12px; margin-top: 20px;'>
+                ⏱️ 00:00
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+display_timer()
+
 
     # Navigation & reset
     c1, c2, c3 = st.columns(3)
