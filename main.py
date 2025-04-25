@@ -280,11 +280,14 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
+    # Initialize session state variables if they don't exist
     if 'initialized' not in st.session_state:
         d = load_data()
         st.session_state.courts = d['courts']
         st.session_state.players = d['players']
-        st.session_state.round = 0  # Initialize round here
+        st.session_state.schedule = []  # Initialize schedule as an empty list
+        st.session_state.history = defaultdict(lambda: defaultdict(int))  # Initialize history
+        st.session_state.recent_ad = set()  # Initialize recent_ad set
         st.session_state.initialized = True
 
     sidebar_management()
