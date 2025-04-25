@@ -232,9 +232,19 @@ def schedule_matches():
 
         # Controls
         if format_opt == "Timed":
-            if st.button("Start Play"):
-                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
+            if 'timer_started' not in st.session_state:
+                st.session_state.timer_started = False
         
+            start_col, stop_col = st.columns([1, 1])
+        
+            if start_col.button("Start Play") and not st.session_state.timer_started:
+                st.session_state.timer_started = True
+        
+            if stop_col.button("Stop Timer") and st.session_state.timer_started:
+                st.session_state.timer_started = False
+        
+            if st.session_state.timer_started:
+                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
                 st.markdown(f"""
                 <div class='big-clock' id='countdown'>Starting...</div>
                 <audio id="beep" loop>
@@ -244,21 +254,41 @@ def schedule_matches():
                 let duration = {match_time} * 60;
                 const countdown = document.getElementById("countdown");
                 const beep = document.getElementById("beep");
+                let stop = false;
         
                 /* Wake Lock setup */
                 let wakeLock = null;
                 const requestWakeLock = async () => {{
                   try {{
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log("Wake Lock is active");
                   }} catch (err) {{
                     console.error("Wake Lock failed:", err);
                   }}
                 }};
                 requestWakeLock();
         
+                /* Poll Streamlit variable to detect stop */
+                const checkStop = () => {{
+                  fetch(window.location.href)
+                    .then(() => {{
+                      if (!{str(st.session_state.timer_started).lower()}) {{
+                        stop = true;
+                      }}
+                    }});
+                }};
+                setInterval(checkStop, 1000);
+        
                 /* Countdown logic */
                 const timer = setInterval(() => {{
+                    if (stop) {{
+                        clearInterval(timer);
+                        countdown.innerHTML = "Stopped";
+                        if (wakeLock !== null) {{
+                            wakeLock.release();
+                            wakeLock = null;
+                        }}
+                        return;
+                    }}
                     const m = Math.floor(duration / 60);
                     const s = duration % 60;
                     countdown.innerHTML = `${{m.toString().padStart(2, '0')}}:${{s.toString().padStart(2, '0')}}`;
@@ -271,12 +301,9 @@ def schedule_matches():
                             beep.pause();
                             beep.currentTime = 0;
                         }}, 10000);
-        
-                        /* Release Wake Lock */
                         if (wakeLock !== null) {{
                             wakeLock.release();
                             wakeLock = null;
-                            console.log("Wake Lock released");
                         }}
                     }}
                 }}, 1000);
