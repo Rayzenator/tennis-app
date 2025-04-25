@@ -263,6 +263,7 @@ def main():
         d = load_data()
         st.session_state.courts = d['courts']
         st.session_state.players = d['players']
+        st.session_state.round = 0  # Initialize round here
         st.session_state.initialized = True
 
     sidebar_management()
