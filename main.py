@@ -136,7 +136,27 @@ def sidebar_management():
 
             else:
                 st.write("You are not in edit mode. Press 'Edit Courts and Players' to manage them.")
+        st.markdown("---")
+        st.header("Round Timer")
+        if 'start_time' not in st.session_state:
+            st.session_state.start_time = None
 
+        timer_placeholder = st.empty()
+
+        if st.button("▶️ Start Timer"):
+            st.session_state.start_time = time.time()
+        if st.button("🔁 Reset Timer"):
+            st.session_state.start_time = None
+
+        with timer_placeholder.container():
+            if st.session_state.start_time:
+                while True:
+                    elapsed = int(time.time() - st.session_state.start_time)
+                    mins, secs = divmod(elapsed, 60)
+                    st.markdown(f"## ⏱️ {mins:02}:{secs:02}")
+                    time.sleep(1)
+            else:
+                st.markdown("## ⏱️ 00:00")
 def schedule_round(players, courts, match_type, leftover_action, history, recent_ad):
     random.shuffle(players)
     matches = []
