@@ -134,8 +134,8 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
-        else:
-            st.write("You are not in edit mode. Press 'Edit Courts and Players' to manage them.")
+            else:
+                st.write("You are not in edit mode. Press 'Edit Courts and Players' to manage them.")
 
 def schedule_round(players, courts, match_type, leftover_action, history, recent_ad):
     random.shuffle(players)
