@@ -233,16 +233,36 @@ def schedule_matches():
         # Controls
         if format_opt == "Timed":
             if st.button("Start Play"):
-                total = match_time * 60
                 st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
-                pl = st.empty()
-                for t in range(total,0,-1):
-                    m,s=divmod(t,60)
-                    pl.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
-                    time.sleep(1)
-                pl.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
-                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
-                st.success("Time's up!")
+        
+                st.markdown(f"""
+                <div class='big-clock' id='countdown'>Starting...</div>
+                <audio id="beep" loop>
+                  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+                </audio>
+                <script>
+                let duration = {match_time} * 60;
+                const countdown = document.getElementById("countdown");
+                const beep = document.getElementById("beep");
+                const timer = setInterval(() => {{
+                    const m = Math.floor(duration / 60);
+                    const s = duration % 60;
+                    countdown.innerHTML = `${{m.toString().padStart(2, '0')}}:${{s.toString().padStart(2, '0')}}`;
+                    duration--;
+                    if (duration < 0) {{
+                        clearInterval(timer);
+                        countdown.innerHTML = "00:00";
+                        beep.play();
+                        setTimeout(() => {{
+                            beep.pause();
+                            beep.currentTime = 0;
+                        }}, 10000);
+                    }}
+                }}, 1000);
+                </script>
+                """, unsafe_allow_html=True)
+        
+                st.success("Countdown running in browser – server is free!")
         else:
             if st.button("Begin Fast Four"):
                 st.info("Fast Four match: first to 4 games wins.")
