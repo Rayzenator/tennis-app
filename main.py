@@ -1,4 +1,3 @@
-import streamlit as st
 import random
 import time
 from collections import defaultdict
@@ -9,43 +8,13 @@ from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
-# Page configuration and dark mode styling
-st.set_page_config(page_title="Tennis Scheduler", layout="wide")
-DARK_MODE_STYLE = """
-<style>
-body { background-color: #1e1e1e; color: white; }
-.sidebar .sidebar-content { background-color: #2e2e2e; color: white; }
-</style>
-"""
-st.markdown(DARK_MODE_STYLE, unsafe_allow_html=True)
+try:
+    import streamlit as st
+    from streamlit_sortables import sort_items
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
 
-# Clock & alert styles
-CLOCK_STYLE = """
-<style>
-.big-clock {
-    font-size: 72px;
-    font-weight: bold;
-    color: #00FF00;
-    background-color: #000000;
-    padding: 20px;
-    text-align: center;
-    border-radius: 15px;
-}
-</style>
-"""
-ALERT_SOUND = """
-<audio id="beep" autoplay loop>
-  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
-  Your browser does not support the audio element.
-</audio>
-<script>
-  const sound = document.getElementById('beep');
-  sound.play();
-  setTimeout(() => { sound.pause(); sound.currentTime = 0; }, 10000);
-</script>
-"""
-
-# Data persistence
 DATA_FILE = "data.json"
 
 def load_data():
@@ -59,28 +28,66 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
-# Sidebar management
+def generate_pdf(matches, rnd):
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    w, h = letter
+    y = h - 40
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, y, f"Tennis Schedule - Round {rnd}")
+    y -= 30
+    c.setFont("Helvetica", 12)
+    for court, pts in matches:
+        c.drawString(50, y, f"Court {court}: {' vs '.join(pts)}")
+        y -= 20
+        if y < 50:
+            c.showPage()
+            y = h - 40
+    c.save()
+    buf.seek(0)
+    return buf
+
+def generate_csv(matches):
+    df = pd.DataFrame([(c, ', '.join(players)) for c, players in matches], columns=["Court", "Players"])
+    buf = BytesIO()
+    df.to_csv(buf, index=False)
+    buf.seek(0)
+    return buf
+
 def sidebar_management():
     with st.sidebar:
         tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
+            if 'editing_court' not in st.session_state:
+                st.session_state.editing_court = {}
             st.header("Courts")
-            from streamlit_sortables import sort_items
             st.markdown("Drag to reorder:")
             new_order = sort_items(st.session_state.courts, direction="vertical")
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
                 save_data()
-            
-            # Show remove buttons separately
+
             for i, court in enumerate(st.session_state.courts):
-                c1, c2 = st.columns([8, 1])
-                c1.write(court)
-                if c2.button("❌", key=f"rm_court_{i}"):
+                c1, c2, c3 = st.columns([6, 1, 1])
+                if st.session_state.editing_court.get(i, False):
+                    new_name = c1.text_input("Rename", value=court, label_visibility="collapsed", key=f"rename_court_input_{i}")
+                    if c2.button("✅", key=f"save_court_{i}"):
+                        if new_name and new_name != court and new_name not in st.session_state.courts:
+                            st.session_state.courts[i] = new_name
+                            save_data()
+                        elif new_name in st.session_state.courts:
+                            st.warning("Court name already exists.")
+                        st.session_state.editing_court[i] = False
+                else:
+                    c1.write(court)
+                    if c2.button("✏️", key=f"edit_court_{i}"):
+                        st.session_state.editing_court[i] = True
+                if c3.button("❌", key=f"rm_court_{i}"):
                     st.session_state.courts.pop(i)
                     save_data()
+
             new = st.text_input("Add Court", key="court_in")
             if st.button("Add Court") and new:
                 if new not in st.session_state.courts:
@@ -91,16 +98,32 @@ def sidebar_management():
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
+
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
+            if 'editing_player' not in st.session_state:
+                st.session_state.editing_player = {}
             st.header("Players")
             for i, player in enumerate(st.session_state.players):
-                p1, p2 = st.columns([8, 1])
-                p1.write(player)
-                if p2.button("❌", key=f"rm_player_{i}"):
+                p1, p2, p3 = st.columns([6, 1, 1])
+                if st.session_state.editing_player.get(i, False):
+                    newp = p1.text_input("Rename", value=player, label_visibility="collapsed", key=f"rename_player_input_{i}")
+                    if p2.button("✅", key=f"save_player_{i}"):
+                        if newp and newp != player and newp not in st.session_state.players:
+                            st.session_state.players[i] = newp
+                            save_data()
+                        elif newp in st.session_state.players:
+                            st.warning("Player name already exists.")
+                        st.session_state.editing_player[i] = False
+                else:
+                    p1.write(player)
+                    if p2.button("✏️", key=f"edit_player_{i}"):
+                        st.session_state.editing_player[i] = True
+                if p3.button("❌", key=f"rm_player_{i}"):
                     st.session_state.players.pop(i)
                     save_data()
+
             newp = st.text_input("Add Player", key="player_in")
             if st.button("Add Player") and newp:
                 if newp not in st.session_state.players:
@@ -111,6 +134,9 @@ def sidebar_management():
             if st.button("Reset Players"):
                 st.session_state.players = []
                 save_data()
+
+# rest of your code remains unchanged...
+
 
 # Export helpers
 def generate_pdf(matches, rnd):
