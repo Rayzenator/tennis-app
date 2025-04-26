@@ -48,7 +48,6 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
-# Sidebar management
 def sidebar_management():
     with st.sidebar:
         tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
@@ -72,15 +71,22 @@ def sidebar_management():
                     save_data()
             new = st.text_input("Add Court", key="court_in")
             if st.button("Add Court") and new:
-                if new not in st.session_state.courts:
-                    st.session_state.courts.append(new)
-                    save_data()
-                    st.experimental_memo()  # Ensure the app state is reflected immediately
-                else:
-                    st.warning("Court already exists.")
+                try:
+                    if new not in st.session_state.courts:
+                        st.session_state.courts.append(new)
+                        save_data()
+                        st.experimental_memo()  # Ensure the app state is reflected immediately
+                    else:
+                        st.warning("Court already exists.")
+                except Exception as e:
+                    st.error(f"Error adding court: {e}")
+            
             if st.button("Reset Courts"):
-                st.session_state.courts = []
-                save_data()
+                try:
+                    st.session_state.courts = []
+                    save_data()
+                except Exception as e:
+                    st.error(f"Error resetting courts: {e}")
 
         with tab2:
             if 'players' not in st.session_state:
@@ -94,14 +100,21 @@ def sidebar_management():
                     save_data()
             newp = st.text_input("Add Player", key="player_in")
             if st.button("Add Player") and newp:
-                if newp not in st.session_state.players:
-                    st.session_state.players.append(newp)
-                    save_data()
-                else:
-                    st.warning("Player already exists.")
+                try:
+                    if newp not in st.session_state.players:
+                        st.session_state.players.append(newp)
+                        save_data()
+                    else:
+                        st.warning("Player already exists.")
+                except Exception as e:
+                    st.error(f"Error adding player: {e}")
+            
             if st.button("Reset Players"):
-                st.session_state.players = []
-                save_data()
+                try:
+                    st.session_state.players = []
+                    save_data()
+                except Exception as e:
+                    st.error(f"Error resetting players: {e}")
 
 # Export helpers
 def generate_pdf(matches, rnd):
