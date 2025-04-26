@@ -184,14 +184,32 @@ if 'initialized' not in st.session_state:
 
 sidebar_management()
 
-# Placeholder for match scheduling logic
+# Match scheduling and results
+
 def schedule_matches():
-    st.write("### Match Scheduling Coming Soon...")
-    if st.session_state.players:
-        match_results(st.session_state.players)
-        scores = load_scores()
-        scored_players = [p for p in scores if p in st.session_state.players and scores[p] > 0]
-        if scored_players:
-            display_leaderboard(scores)
+    players = st.session_state.players
+    courts = st.session_state.courts
+    if not players or not courts:
+        st.warning("Please add players and courts to schedule matches.")
+        return
+
+    st.write("### Match Schedule")
+    random.shuffle(players)
+    matches = []
+    court_assignments = min(len(players) // 2, len(courts))
+
+    for i in range(court_assignments):
+        p1 = players[2 * i]
+        p2 = players[2 * i + 1]
+        matches.append((courts[i], [p1, p2]))
+
+    for court, match_players in matches:
+        st.write(f"**Court {court}:** {match_players[0]} vs {match_players[1]}")
+
+    match_players = [p for _, match in matches for p in match]
+    match_results(match_players)
+
+    st.download_button("Download as PDF", generate_pdf(matches, 1), file_name="tennis_schedule.pdf")
+    st.download_button("Download as CSV", generate_csv(matches), file_name="tennis_schedule.csv")
 
 schedule_matches()
