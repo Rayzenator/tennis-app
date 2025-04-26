@@ -64,26 +64,6 @@ def save_scores(scores):
     with open(SCORES_FILE, 'w') as file:
         json.dump(scores, file)
 
-# Update player scores after each match
-def update_scores(player_scores, players, scores):
-    for player in players:
-        if player not in player_scores:
-            player_scores[player] = 0
-        player_scores[player] += scores[player]  # Update score for each player
-
-    save_scores(player_scores)
-    return player_scores
-
-# Display leaderboard at the top of the page
-def display_leaderboard(player_scores):
-    sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
-    st.write("### Leaderboard")
-    for i, (player, score) in enumerate(sorted_scores, start=1):
-        st.write(f"{i}. {player}: {score} points")
-
-# Load and display the leaderboard at the very top
-player_scores = load_scores()
-display_leaderboard(player_scores)
 ###############
 
 
@@ -150,6 +130,14 @@ def sidebar_management():
             if st.button("Reset Players"):
                 st.session_state.players = []
                 save_data()
+
+#################################
+
+# ✅ Now that we have real player names, show the leaderboard
+player_scores = load_scores()
+display_leaderboard(player_scores)
+
+#################################
 
 # Export helpers
 def generate_pdf(matches, rnd):
