@@ -45,6 +45,77 @@ ALERT_SOUND = """
 </script>
 """
 
+#### New Code here
+
+# Path to store scores data
+SCORES_FILE = 'scores.json'
+
+# Load or initialize scores data
+def load_scores():
+    if os.path.exists(SCORES_FILE):
+        with open(SCORES_FILE, 'r') as file:
+            return json.load(file)
+    else:
+        return {}
+
+def save_scores(scores):
+    with open(SCORES_FILE, 'w') as file:
+        json.dump(scores, file)
+
+# Update player scores after each match
+def update_scores(player_scores, players, scores):
+    for player in players:
+        if player not in player_scores:
+            player_scores[player] = 0
+        player_scores[player] += scores[player]  # Update score for each player
+
+    save_scores(player_scores)
+    return player_scores
+
+# Display leaderboard at the top of the page
+def display_leaderboard(player_scores):
+    sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
+    st.write("### Leaderboard")
+    for i, (player, score) in enumerate(sorted_scores, start=1):
+        st.write(f"{i}. {player}: {score} points")
+
+# Example match scoring and tracking
+def match_results(players):
+    # Add a section to input scores for each player
+    st.write("### Enter Scores for Each Player")
+    player_scores = {}
+    
+    for player in players:
+        score = st.number_input(f"Score for {player}", min_value=0, value=0)
+        player_scores[player] = score
+    
+    # Update the leaderboard with the new scores
+    player_scores = update_scores(load_scores(), players, player_scores)
+    
+    # Display updated leaderboard
+    display_leaderboard(player_scores)
+
+# Example match setup
+def tennis_match():
+    st.title("Tennis Match Scheduler")
+
+    # Load existing scores and display the leaderboard at the top of the page
+    player_scores = load_scores()
+    display_leaderboard(player_scores)  # Display the leaderboard first
+
+    # Define players for this match (you can customize this)
+    players = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
+    
+    # Show match results and score input form below the leaderboard
+    match_results(players)
+
+if __name__ == "__main__":
+    tennis_match()
+
+#############
+
+
+
 # Data persistence
 DATA_FILE = "data.json"
 
