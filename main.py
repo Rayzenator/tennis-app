@@ -8,6 +8,7 @@ import pandas as pd
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from streamlit_sortables import sort_items
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -45,78 +46,81 @@ def load_data():
 
 def save_data():
     with open(DATA_FILE, 'w') as f:
-        json.dump({"courts": st.session_state.courts,
-                   "players": st.session_state.players}, f)
+        json.dump({
+            "courts": st.session_state.courts,
+            "players": st.session_state.players
+        }, f)
 
 def sidebar_management():
     with st.sidebar:
         tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
 
-        # --- Courts Tab ---
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
-            st.header("Courts")
-            from streamlit_sortables import sort_items
 
+            st.header("Courts")
             st.markdown("Drag to reorder:")
+
+            sortable_key = f"sortable_courts_{hash(tuple(st.session_state.courts))}"
             new_order = sort_items(
                 st.session_state.courts,
                 direction="vertical",
-                key="sortable_courts_tab"
+                key=sortable_key
             )
-
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
                 save_data()
 
+            # Show remove buttons
             for i, court in enumerate(st.session_state.courts):
                 c1, c2 = st.columns([8, 1])
                 c1.write(court)
-                if c2.button("❌", key=f"remove_court_{i}"):
+                if c2.button("❌", key=f"rm_court_{court}"):
                     st.session_state.courts.pop(i)
                     save_data()
-                    st.session_state.court_input = ""  # reset input
+                    st.rerun()
 
-            new = st.text_input("Add Court", key="court_input")
-            if st.button("Add Court", key="btn_add_court") and new:
+            new = st.text_input("Add Court", key="court_in")
+            if st.button("Add Court") and new:
                 if new not in st.session_state.courts:
                     st.session_state.courts.append(new)
                     save_data()
-                    st.session_state.court_input = ""  # Clear input
+                    st.rerun()
                 else:
                     st.warning("Court already exists.")
 
-            if st.button("Reset Courts", key="btn_reset_courts"):
+            if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
+                st.rerun()
 
-        # --- Players Tab ---
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
-            st.header("Players")
 
+            st.header("Players")
             for i, player in enumerate(st.session_state.players):
                 p1, p2 = st.columns([8, 1])
                 p1.write(player)
-                if p2.button("❌", key=f"remove_player_{i}"):
+                if p2.button("❌", key=f"rm_player_{player}"):
                     st.session_state.players.pop(i)
                     save_data()
-                    st.session_state.player_input = ""  # reset input
+                    st.rerun()
 
-            newp = st.text_input("Add Player", key="player_input")
-            if st.button("Add Player", key="btn_add_player") and newp:
+            newp = st.text_input("Add Player", key="player_in")
+            if st.button("Add Player") and newp:
                 if newp not in st.session_state.players:
                     st.session_state.players.append(newp)
                     save_data()
-                    st.session_state.player_input = ""  # Clear input
+                    st.rerun()
                 else:
                     st.warning("Player already exists.")
 
-            if st.button("Reset Players", key="btn_reset_players"):
+            if st.button("Reset Players"):
                 st.session_state.players = []
                 save_data()
+                st.rerun()
 
 # Initialize
 if 'initialized' not in st.session_state:
