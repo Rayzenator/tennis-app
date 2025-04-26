@@ -51,83 +51,52 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
+# Function to generate a random key
 def generate_random_key(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
-    
+
 def sidebar_management():
+    # Initialize courts in session state if not already present
     if 'courts' not in st.session_state:
         st.session_state.courts = []
+
+    # Define a unique sorting key based on current courts
+    sort_key = f"court_sort_{generate_random_key()}"
+    
+    # Display the list of courts in a sortable format
+    new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
+
+    # Handle the addition of a new court
+    c2 = st.sidebar.container()
+    if c2.button("Add Court"):
+        st.session_state.courts.append(f"Court {len(st.session_state.courts) + 1}")
+    
+    # Handle the removal of courts with unique keys for each button
+    for i, court in enumerate(st.session_state.courts):
+        # Generate a unique key for each button (court removal)
+        button_key = f"rm_court_{court}_{i}_{generate_random_key()}"
+        
+        if c2.button(f"❌ Remove {court}", key=button_key):
+            st.session_state.courts.remove(court)
+
+def player_management():
+    # Example list of players
     if 'players' not in st.session_state:
-        st.session_state.players = []
-    
-    with st.sidebar:
-        tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
-    
-        # ---------- Courts Tab ----------
-        with tab1:
-            st.header("Courts")
-            st.markdown("Drag to reorder:")
-    
-            # Function to generate a unique key based on the courts list and timestamp
-            def get_sort_key(items):
-                hash_input = ",".join(items)
-                return "sort_" + hashlib.md5(hash_input.encode()).hexdigest() + str(time.time())
-            
-            sort_key = get_sort_key(st.session_state.courts)
-            
-            # Now use this sort_key when calling the sort_items function
-            new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
-            if new_order != st.session_state.courts:
-                st.session_state.courts = new_order
-                save_data()
-    
-            for i, court in enumerate(st.session_state.courts):
-                c1, c2 = st.columns([8, 1])
-                c1.write(court)
-                button_key = f"rm_court_{court}_{i}_{generate_random_key()}"
-                if c2.button("❌", key=button_key):
-                    st.session_state.courts.pop(i)
-                    save_data()
-                    st.rerun()
-    
-            new = st.text_input("Add Court", key="court_in")
-            if st.button("Add Court", key="add_court_btn") and new:
-                if new not in st.session_state.courts:
-                    st.session_state.courts.append(new)
-                    save_data()
-                    st.rerun()
-                else:
-                    st.warning("Court already exists.")
-    
-            if st.button("Reset Courts", key="reset_courts_btn"):
-                st.session_state.courts = []
-                save_data()
-                st.rerun()
-    
-        # ---------- Players Tab ----------
-        with tab2:
-            st.header("Players")
-            for i, player in enumerate(st.session_state.players):
-                p1, p2 = st.columns([8, 1])
-                p1.write(player)
-                if p2.button("❌", key=f"rm_player_{player}_{i}"):
-                    st.session_state.players.pop(i)
-                    save_data()
-                    st.rerun()
-    
-            newp = st.text_input("Add Player", key="player_in")
-            if st.button("Add Player", key="add_player_btn") and newp:
-                if newp not in st.session_state.players:
-                    st.session_state.players.append(newp)
-                    save_data()
-                    st.rerun()
-                else:
-                    st.warning("Player already exists.")
-    
-            if st.button("Reset Players", key="reset_players_btn"):
-                st.session_state.players = []
-                save_data()
-                st.rerun()
+        st.session_state.players = ["Player 1", "Player 2", "Player 3"]
+
+    # Handle player removal with unique buttons
+    for i, player in enumerate(st.session_state.players):
+        # Generate a unique key for each button (player removal)
+        button_key = f"rm_player_{player}_{i}_{generate_random_key()}"
+        
+        if st.button(f"❌ Remove {player}", key=button_key):
+            st.session_state.players.remove(player)
+
+# Add the sidebar management function
+sidebar_management()
+
+# Add the player management function
+player_management()
 
 # Initialize
 if 'initialized' not in st.session_state:
