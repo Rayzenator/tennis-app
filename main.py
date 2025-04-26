@@ -132,10 +132,21 @@ def sidebar_management():
                 save_data()
 
 #################################
-
+def display_leaderboard(player_scores):
+    sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
+    st.write("### Leaderboard")
+    for i, (player, score) in enumerate(sorted_scores, start=1):
+        st.write(f"{i}. {player}: {score} points")
+        
 # ✅ Now that we have real player names, show the leaderboard
 player_scores = load_scores()
 display_leaderboard(player_scores)
+
+def load_scores():
+    if os.path.exists("scores.json"):
+        with open("scores.json", "r") as file:
+            return json.load(file)
+    return {}
 
 #################################
 
