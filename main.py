@@ -135,6 +135,8 @@ def sidebar_management():
                 if st.button("Confirm Delete", key="confirm_delete"):
                     delete_all_scores()
                     st.success("All scores have been deleted.")
+        # 🔥 Add leaderboard at the bottom of sidebar
+        display_leaderboard(load_scores())
 
 # Display leaderboard in sidebar or right column
 def display_leaderboard(player_scores):
