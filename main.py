@@ -81,6 +81,9 @@ def display_leaderboard(player_scores):
     for i, (player, score) in enumerate(sorted_scores, start=1):
         st.write(f"{i}. {player}: {score} points")
 
+# Load and display the leaderboard at the very top
+player_scores = load_scores()
+display_leaderboard(player_scores)
 ###############
 
 
