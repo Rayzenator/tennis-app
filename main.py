@@ -75,8 +75,7 @@ def sidebar_management():
                 if new not in st.session_state.courts:
                     st.session_state.courts.append(new)
                     save_data()
-                    # Add a small delay to ensure Streamlit registers the change
-                    time.sleep(0.1)
+                    st.experimental_set_query_params()  # Trigger re-run on UI update
                 else:
                     st.warning("Court already exists.")
             
@@ -100,14 +99,22 @@ def sidebar_management():
                 if newp not in st.session_state.players:
                     st.session_state.players.append(newp)
                     save_data()
-                    # Add a small delay to ensure Streamlit registers the change
-                    time.sleep(0.1)
+                    st.experimental_set_query_params()  # Trigger re-run on UI update
                 else:
                     st.warning("Player already exists.")
             
             if st.button("Reset Players"):
                 st.session_state.players = []
                 save_data()
+
+# Initialize
+if 'initialized' not in st.session_state:
+    d = load_data()
+    st.session_state.courts = d['courts']
+    st.session_state.players = d['players']
+    st.session_state.initialized = True
+
+sidebar_management()
 # Export helpers
 def generate_pdf(matches, rnd):
     buf = BytesIO()
