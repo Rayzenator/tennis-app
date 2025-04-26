@@ -312,3 +312,18 @@ if 'initialized' not in st.session_state:
 sidebar_management()
 schedule_matches()
 
+
+def match_results(players):
+    # Add a section to input scores for each player
+    st.write("### Enter Scores for Each Player")
+    player_scores = {}
+    
+    for player in players:
+        score = st.number_input(f"Score for {player}", min_value=0, value=0)
+        player_scores[player] = score
+    
+    # Update the leaderboard with the new scores
+    player_scores = update_scores(load_scores(), players, player_scores)
+    
+    # Display updated leaderboard
+    display_leaderboard(player_scores)
