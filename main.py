@@ -49,28 +49,33 @@ def save_data():
     with open(DATA_FILE, 'w') as f:
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
-
+def get_sort_key(items):
+    hash_input = ",".join(items)
+    return "sort_" + hashlib.md5(hash_input.encode()).hexdigest()
+    
 def sidebar_management():
     if 'courts' not in st.session_state:
         st.session_state.courts = []
     if 'players' not in st.session_state:
         st.session_state.players = []
-
+    
     with st.sidebar:
         tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
-
+    
         # ---------- Courts Tab ----------
         with tab1:
             st.header("Courts")
             st.markdown("Drag to reorder:")
-
+    
             # Generate a unique key to avoid StreamlitDuplicateElementKey
-            sort_key = f"court_sort_{sha1(','.join(st.session_state.courts).encode()).hexdigest()[:8]}"
+            sort_key = get_sort_key(st.session_state.courts)
+            new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
+            
             new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
                 save_data()
-
+    
             for i, court in enumerate(st.session_state.courts):
                 c1, c2 = st.columns([8, 1])
                 c1.write(court)
@@ -78,7 +83,7 @@ def sidebar_management():
                     st.session_state.courts.pop(i)
                     save_data()
                     st.rerun()
-
+    
             new = st.text_input("Add Court", key="court_in")
             if st.button("Add Court", key="add_court_btn") and new:
                 if new not in st.session_state.courts:
@@ -87,12 +92,12 @@ def sidebar_management():
                     st.rerun()
                 else:
                     st.warning("Court already exists.")
-
+    
             if st.button("Reset Courts", key="reset_courts_btn"):
                 st.session_state.courts = []
                 save_data()
                 st.rerun()
-
+    
         # ---------- Players Tab ----------
         with tab2:
             st.header("Players")
@@ -103,7 +108,7 @@ def sidebar_management():
                     st.session_state.players.pop(i)
                     save_data()
                     st.rerun()
-
+    
             newp = st.text_input("Add Player", key="player_in")
             if st.button("Add Player", key="add_player_btn") and newp:
                 if newp not in st.session_state.players:
@@ -112,7 +117,7 @@ def sidebar_management():
                     st.rerun()
                 else:
                     st.warning("Player already exists.")
-
+    
             if st.button("Reset Players", key="reset_players_btn"):
                 st.session_state.players = []
                 save_data()
