@@ -124,6 +124,7 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
+# Display Leaderboard
 def display_leaderboard(player_scores):
     if not player_scores:
         return
@@ -132,12 +133,14 @@ def display_leaderboard(player_scores):
     for i, (player, score) in enumerate(sorted_scores, start=1):
         st.write(f"{i}. {player}: {score} points")
 
+# Update player scores
 def update_scores(current_scores, players, new_scores):
     for player in players:
         current_scores[player] = current_scores.get(player, 0) + new_scores.get(player, 0)
     save_scores(current_scores)
     return current_scores
 
+# Match Results & score entry
 def match_results(players):
     st.write("### Enter Scores for Each Player")
     player_scores = {}
@@ -175,17 +178,7 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
-# Only show leaderboard if scores are available and at least one round is played
-if 'initialized' not in st.session_state:
-    d = load_data()
-    st.session_state.courts = d['courts']
-    st.session_state.players = d['players']
-    st.session_state.initialized = True
-
-sidebar_management()
-
-# Match scheduling and results
-
+# Scheduling and match generation
 def schedule_matches():
     players = st.session_state.players
     courts = st.session_state.courts
@@ -193,14 +186,31 @@ def schedule_matches():
         st.warning("Please add players and courts to schedule matches.")
         return
 
-    st.write("### Match Schedule")
-    random.shuffle(players)
+    # Select match type and format
+    game_type = st.radio("Match Type", ["Doubles", "Singles"], key="game_type")
+    format_opt = st.radio("Format", ["Timed", "Fast Four"], key="format_opt")
+    leftover_opt = st.radio("Leftover Action", ["Rest", "Play American Doubles"], key="leftover_opt")
+
+    if format_opt == "Timed":
+        match_time = st.number_input("Match Time (minutes)", 5, 60, 15)
+    else:
+        st.info("Fast Four: first to 4 games wins.")
+
+    # Resting players logic
+    resting_players = [player for player, status in st.session_state.get("player_status", {}).items() if status == "Rest"]
+    available_players = [player for player in players if player not in resting_players]
+
+    st.write("### Available Players")
+    st.write(available_players)
+
+    # Shuffle players and schedule
+    random.shuffle(available_players)
     matches = []
-    court_assignments = min(len(players) // 2, len(courts))
+    court_assignments = min(len(available_players) // 2, len(courts))
 
     for i in range(court_assignments):
-        p1 = players[2 * i]
-        p2 = players[2 * i + 1]
+        p1 = available_players[2 * i]
+        p2 = available_players[2 * i + 1]
         matches.append((courts[i], [p1, p2]))
 
     for court, match_players in matches:
@@ -212,4 +222,12 @@ def schedule_matches():
     st.download_button("Download as PDF", generate_pdf(matches, 1), file_name="tennis_schedule.pdf")
     st.download_button("Download as CSV", generate_csv(matches), file_name="tennis_schedule.csv")
 
+# Run app
+if 'initialized' not in st.session_state:
+    d = load_data()
+    st.session_state.courts = d['courts']
+    st.session_state.players = d['players']
+    st.session_state.initialized = True
+
+sidebar_management()
 schedule_matches()
