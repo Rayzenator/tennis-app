@@ -55,7 +55,7 @@ def save_data():
 def generate_random_key(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-# Sidebar Management: Including tabs, courts, and buttons with unique keys
+# Sidebar Management: Including tabs and buttons
 def sidebar_management():
     # Create tabs for the sidebar
     sidebar_tab = st.sidebar.radio("Select an option", ["Courts", "Players", "Settings"])
@@ -66,8 +66,8 @@ def sidebar_management():
             st.session_state.courts = []
 
         # Define a unique sorting key based on current courts
-        sort_key = f"court_sort_{generate_random_key()}"
-        
+        sort_key = f"court_sort_{hashlib.sha1(','.join(st.session_state.courts).encode()).hexdigest()[:8]}"
+
         # Display the list of courts in a sortable format
         new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
 
@@ -77,7 +77,7 @@ def sidebar_management():
         
         # Handle the removal of courts with unique keys for each button
         for i, court in enumerate(st.session_state.courts):
-            button_key = f"rm_court_{court}_{i}_{generate_random_key()}"
+            button_key = f"rm_court_{court}_{i}"
             if st.sidebar.button(f"❌ Remove {court}", key=button_key):
                 st.session_state.courts.remove(court)
 
@@ -88,13 +88,26 @@ def sidebar_management():
 
         # Handle player removal with unique buttons
         for i, player in enumerate(st.session_state.players):
-            button_key = f"rm_player_{player}_{i}_{generate_random_key()}"
+            button_key = f"rm_player_{player}_{i}"
             if st.sidebar.button(f"❌ Remove {player}", key=button_key):
                 st.session_state.players.remove(player)
 
     # Settings (or any other tab content)
     elif sidebar_tab == "Settings":
         st.sidebar.write("Settings content goes here.")
+
+# Main function to run the app
+def main():
+    # Call sidebar management to render the sidebar
+    sidebar_management()
+
+    # Main content
+    st.title("Tennis Match Scheduler")
+    st.write("Select an option from the sidebar.")
+
+# Run the app
+if __name__ == "__main__":
+    main()
 
 # Main function to run the app
 def main():
