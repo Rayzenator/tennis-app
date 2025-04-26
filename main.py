@@ -130,21 +130,11 @@ def sidebar_management():
                 save_data()
         with tab3:
             st.header("Settings")
-            if "confirm_delete_scores" not in st.session_state:
-                st.session_state.confirm_delete_scores = False
-        
-            if not st.session_state.confirm_delete_scores:
-                if st.button("🗑️ Delete All Scores"):
-                    st.session_state.confirm_delete_scores = True
-                    st.warning("Are you sure? Click confirm to delete ALL scores.")
-            else:
-                c1, c2 = st.columns([1, 1])
-                if c1.button("✅ Confirm Delete"):
+            if st.button("Delete All Scores"):
+                st.warning("Are you sure you want to delete all scores? This cannot be undone.")
+                if st.button("Confirm Delete", key="confirm_delete"):
                     delete_all_scores()
-                    st.success("✅ All scores have been deleted.")
-                    st.session_state.confirm_delete_scores = False
-                if c2.button("❌ Cancel"):
-                    st.session_state.confirm_delete_scores = False
+                    st.success("All scores have been deleted.")
 
 # Display leaderboard in sidebar or right column
 def display_leaderboard(player_scores):
