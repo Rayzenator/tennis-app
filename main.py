@@ -10,6 +10,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from streamlit_sortables import sort_items
 import hashlib
+import string
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -50,6 +51,9 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
+def generate_random_key(length=8):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+    
 def sidebar_management():
     if 'courts' not in st.session_state:
         st.session_state.courts = []
@@ -80,7 +84,8 @@ def sidebar_management():
             for i, court in enumerate(st.session_state.courts):
                 c1, c2 = st.columns([8, 1])
                 c1.write(court)
-                if c2.button("❌", key=f"rm_court_{court}_{i}"):
+                button_key = f"rm_court_{court}_{i}_{generate_random_key()}"
+                if c2.button("❌", key=button_key):
                     st.session_state.courts.pop(i)
                     save_data()
                     st.rerun()
