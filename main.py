@@ -57,7 +57,7 @@ def sidebar_management():
             st.header("Courts")
             from streamlit_sortables import sort_items
             st.markdown("Drag to reorder:")
-            new_order = sort_items(st.session_state.courts, direction="vertical")
+            new_order = sort_items(st.session_state.courts, direction="vertical", key="court_sort")
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
                 save_data()
