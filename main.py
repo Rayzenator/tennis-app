@@ -124,11 +124,13 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
+# Display the leaderboard in a formatted table
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
+    leaderboard_data = [(i+1, player, score) for i, (player, score) in enumerate(sorted_scores)]
+    df = pd.DataFrame(leaderboard_data, columns=["Rank", "Player", "Score"])
     st.write("### Leaderboard")
-    for i, (player, score) in enumerate(sorted_scores, start=1):
-        st.write(f"{i}. {player}: {score} points")
+    st.dataframe(df)
 
 def update_scores(current_scores, players, new_scores):
     for player in players:
@@ -295,26 +297,19 @@ if 'initialized' not in st.session_state:
     st.session_state.players = d['players']
     st.session_state.initialized = True
 
-sidebar_management()
+# Create two columns in the sidebar for courts/players management and leaderboard
+with st.sidebar:
+    col1, col2 = st.columns([2, 3])  # Adjust the column width as needed
 
-def display_leaderboard(player_scores):
-    # Filter out default players or placeholders
-    real_players = st.session_state.get("players", [])
-    filtered_scores = {player: score for player, score in player_scores.items() if player in real_players}
-    
-    # Sort and display the leaderboard
-    sorted_scores = sorted(filtered_scores.items(), key=lambda x: x[1], reverse=True)
-    st.write("### Leaderboard")
-    for i, (player, score) in enumerate(sorted_scores, start=1):
-        st.write(f"{i}. {player}: {score} points")
-        
-#######################
-# Show leaderboard only if there are scores for actual players
-# scores = load_scores()
-# real_players = st.session_state.get("players", [])
-# scored_players = [p for p in scores if p in real_players and scores[p] > 0]
+    with col1:
+        sidebar_management()
 
-# if scored_players:
-#     display_leaderboard(scores)
-###########################
+    with col2:
+        # Display the leaderboard in the second column
+        scores = load_scores()
+        real_players = st.session_state.get("players", [])
+        scored_players = [p for p in scores if p in real_players and scores[p] > 0]
+        if scored_players:
+            display_leaderboard(scores)
+
 schedule_matches()
