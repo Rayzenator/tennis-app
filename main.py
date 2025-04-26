@@ -99,11 +99,11 @@ def sidebar_management():
                 st.session_state.players = []
 
             st.header("Players")
-            for i, player in enumerate(st.session_state.players):
+            for player in st.session_state.players:
                 p1, p2 = st.columns([8, 1])
                 p1.write(player)
                 if p2.button("❌", key=f"rm_player_{player}"):
-                    st.session_state.players.pop(i)
+                    st.session_state.players.remove(player)
                     save_data()
                     st.rerun()
 
