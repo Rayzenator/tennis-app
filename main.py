@@ -85,6 +85,8 @@ def display_leaderboard(player_scores):
     for i, (player, score) in enumerate(sorted_scores, start=1):
         st.write(f"{i}. {player}: {score} points")
 
+
+
 # Sidebar management
 
 def sidebar_management():
@@ -179,6 +181,9 @@ def match_results():
         updated = update_scores(player_scores, st.session_state.players, match_scores)
         st.success("Scores submitted!")
         display_leaderboard(updated)
+
+
+
 
 # Match scheduling logic
 
@@ -280,6 +285,12 @@ def schedule_matches():
         st.session_state.history = defaultdict(lambda: defaultdict(int))
         st.session_state.round = 0
         st.session_state.recent_ad = set()
+
+##################
+if 'players' in st.session_state and st.session_state.players:
+    player_scores = load_scores()
+    display_leaderboard(player_scores)
+##################
 
 # Initialize session and run app
 
