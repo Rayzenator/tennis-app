@@ -201,7 +201,7 @@ def schedule_matches():
     available_players = [player for player in players if player not in resting_players]
 
     st.write("### Available Players")
-    st.write(available_players)
+    st.write(', '.join(available_players))  # Show players cleanly in a comma-separated format
 
     # Shuffle players and schedule
     random.shuffle(available_players)
@@ -222,7 +222,7 @@ def schedule_matches():
     st.download_button("Download as PDF", generate_pdf(matches, 1), file_name="tennis_schedule.pdf")
     st.download_button("Download as CSV", generate_csv(matches), file_name="tennis_schedule.csv")
 
-# Add manual control buttons
+# Add manual control buttons after options
 def control_buttons():
     # Button to generate a new round
     if st.button("Generate Round"):
@@ -245,5 +245,5 @@ if 'initialized' not in st.session_state:
     st.session_state.initialized = True
 
 sidebar_management()
-control_buttons()
-schedule_matches()
+schedule_matches()  # Options appear first
+control_buttons()  # Buttons appear after the options
