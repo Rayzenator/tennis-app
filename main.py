@@ -69,23 +69,20 @@ def sidebar_management():
                 if c2.button("❌", key=f"rm_court_{i}"):
                     st.session_state.courts.pop(i)
                     save_data()
+            
             new = st.text_input("Add Court", key="court_in")
             if st.button("Add Court") and new:
-                try:
-                    if new not in st.session_state.courts:
-                        st.session_state.courts.append(new)
-                        save_data()
-                    else:
-                        st.warning("Court already exists.")
-                except Exception as e:
-                    st.error(f"Error adding court: {e}")
+                if new not in st.session_state.courts:
+                    st.session_state.courts.append(new)
+                    save_data()
+                    # Add a small delay to ensure Streamlit registers the change
+                    time.sleep(0.1)
+                else:
+                    st.warning("Court already exists.")
             
             if st.button("Reset Courts"):
-                try:
-                    st.session_state.courts = []
-                    save_data()
-                except Exception as e:
-                    st.error(f"Error resetting courts: {e}")
+                st.session_state.courts = []
+                save_data()
 
         with tab2:
             if 'players' not in st.session_state:
@@ -97,24 +94,20 @@ def sidebar_management():
                 if p2.button("❌", key=f"rm_player_{i}"):
                     st.session_state.players.pop(i)
                     save_data()
+
             newp = st.text_input("Add Player", key="player_in")
             if st.button("Add Player") and newp:
-                try:
-                    if newp not in st.session_state.players:
-                        st.session_state.players.append(newp)
-                        save_data()
-                    else:
-                        st.warning("Player already exists.")
-                except Exception as e:
-                    st.error(f"Error adding player: {e}")
+                if newp not in st.session_state.players:
+                    st.session_state.players.append(newp)
+                    save_data()
+                    # Add a small delay to ensure Streamlit registers the change
+                    time.sleep(0.1)
+                else:
+                    st.warning("Player already exists.")
             
             if st.button("Reset Players"):
-                try:
-                    st.session_state.players = []
-                    save_data()
-                except Exception as e:
-                    st.error(f"Error resetting players: {e}")
-
+                st.session_state.players = []
+                save_data()
 # Export helpers
 def generate_pdf(matches, rnd):
     buf = BytesIO()
