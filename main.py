@@ -62,22 +62,21 @@ def sidebar_management():
             st.header("Courts")
             st.markdown("Drag to reorder:")
 
-            sortable_key = f"sortable_courts_{hash(tuple(st.session_state.courts))}"
+            # ✅ Fixed key (don't change dynamically)
             new_order = sort_items(
                 st.session_state.courts,
                 direction="vertical",
-                key=sortable_key
+                key="sort_courts"
             )
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
                 save_data()
 
-            # Show remove buttons
-            for i, court in enumerate(st.session_state.courts):
+            for court in st.session_state.courts:
                 c1, c2 = st.columns([8, 1])
                 c1.write(court)
                 if c2.button("❌", key=f"rm_court_{court}"):
-                    st.session_state.courts.pop(i)
+                    st.session_state.courts.remove(court)
                     save_data()
                     st.rerun()
 
