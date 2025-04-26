@@ -8,9 +8,6 @@ import pandas as pd
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from streamlit_sortables import sort_items
-import hashlib
-import string
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -51,76 +48,59 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
-# Function to generate a random key
-def generate_random_key(length=8):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
-
-# Sidebar Management: Including tabs and buttons
+# Sidebar management
 def sidebar_management():
-    # Create tabs for the sidebar
-    sidebar_tab = st.sidebar.radio("Select an option", ["Courts", "Players", "Settings"])
+    with st.sidebar:
+        tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
+        with tab1:
+            if 'courts' not in st.session_state:
+                st.session_state.courts = []
+            st.header("Courts")
+            from streamlit_sortables import sort_items
+            st.markdown("Drag to reorder:")
+            new_order = sort_items(st.session_state.courts, direction="vertical")
+            if new_order != st.session_state.courts:
+                st.session_state.courts = new_order
+                save_data()
+            
+            # Show remove buttons separately
+            for i, court in enumerate(st.session_state.courts):
+                c1, c2 = st.columns([8, 1])
+                c1.write(court)
+                if c2.button("❌", key=f"rm_court_{i}"):
+                    st.session_state.courts.pop(i)
+                    save_data()
+            new = st.text_input("Add Court", key="court_in")
+            if st.button("Add Court") and new:
+                if new not in st.session_state.courts:
+                    st.session_state.courts.append(new)
+                    save_data()
+                else:
+                    st.warning("Court already exists.")
+            if st.button("Reset Courts"):
+                st.session_state.courts = []
+                save_data()
+        with tab2:
+            if 'players' not in st.session_state:
+                st.session_state.players = []
+            st.header("Players")
+            for i, player in enumerate(st.session_state.players):
+                p1, p2 = st.columns([8, 1])
+                p1.write(player)
+                if p2.button("❌", key=f"rm_player_{i}"):
+                    st.session_state.players.pop(i)
+                    save_data()
+            newp = st.text_input("Add Player", key="player_in")
+            if st.button("Add Player") and newp:
+                if newp not in st.session_state.players:
+                    st.session_state.players.append(newp)
+                    save_data()
+                else:
+                    st.warning("Player already exists.")
+            if st.button("Reset Players"):
+                st.session_state.players = []
+                save_data()
 
-    # Courts Management
-    if sidebar_tab == "Courts":
-        if 'courts' not in st.session_state:
-            st.session_state.courts = []
-
-        # Define a unique sorting key based on current courts
-        sort_key = f"court_sort_{hashlib.sha1(','.join(st.session_state.courts).encode()).hexdigest()[:8]}"
-
-        # Display the list of courts in a sortable format
-        new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
-
-        # Handle the addition of a new court
-        if st.sidebar.button("Add Court"):
-            st.session_state.courts.append(f"Court {len(st.session_state.courts) + 1}")
-        
-        # Handle the removal of courts with unique keys for each button
-        for i, court in enumerate(st.session_state.courts):
-            button_key = f"rm_court_{court}_{i}"
-            if st.sidebar.button(f"❌ Remove {court}", key=button_key):
-                st.session_state.courts.remove(court)
-
-    # Players Management
-    elif sidebar_tab == "Players":
-        if 'players' not in st.session_state:
-            st.session_state.players = ["Player 1", "Player 2", "Player 3"]
-
-        # Handle player removal with unique buttons
-        for i, player in enumerate(st.session_state.players):
-            button_key = f"rm_player_{player}_{i}"
-            if st.sidebar.button(f"❌ Remove {player}", key=button_key):
-                st.session_state.players.remove(player)
-
-    # Settings (or any other tab content)
-    elif sidebar_tab == "Settings":
-        st.sidebar.write("Settings content goes here.")
-
-# Main function to run the app
-def main():
-    # Call sidebar management to render the sidebar
-    sidebar_management()
-
-    # Main content
-    st.title("Tennis Match Scheduler")
-    st.write("Select an option from the sidebar.")
-
-# Run the app
-if __name__ == "__main__":
-    main()
-
-# Main function to run the app
-def main():
-    # Call sidebar management to render the sidebar
-    sidebar_management()
-
-    # Main content
-    st.title("Tennis Match Scheduler")
-    st.write("Select an option from the sidebar.")
-
-# Run the app
-if __name__ == "__main__":
-    main()
 # Export helpers
 def generate_pdf(matches, rnd):
     buf = BytesIO()
