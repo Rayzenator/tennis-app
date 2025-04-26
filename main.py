@@ -48,6 +48,42 @@ ALERT_SOUND = """
 # Data persistence
 DATA_FILE = "data.json"
 
+############
+# Path to store scores data
+SCORES_FILE = 'scores.json'
+
+# Load or initialize scores data
+def load_scores():
+    if os.path.exists(SCORES_FILE):
+        with open(SCORES_FILE, 'r') as file:
+            return json.load(file)
+    else:
+        return {}
+
+def save_scores(scores):
+    with open(SCORES_FILE, 'w') as file:
+        json.dump(scores, file)
+
+# Update player scores after each match
+def update_scores(player_scores, players, scores):
+    for player in players:
+        if player not in player_scores:
+            player_scores[player] = 0
+        player_scores[player] += scores[player]  # Update score for each player
+
+    save_scores(player_scores)
+    return player_scores
+
+# Display leaderboard at the top of the page
+def display_leaderboard(player_scores):
+    sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
+    st.write("### Leaderboard")
+    for i, (player, score) in enumerate(sorted_scores, start=1):
+        st.write(f"{i}. {player}: {score} points")
+
+###############
+
+
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
