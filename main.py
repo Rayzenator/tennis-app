@@ -33,7 +33,7 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
-# Schedule matches and generate rounds
+# Match scheduling and results
 def schedule_matches():
     players = st.session_state.players
     courts = st.session_state.courts
@@ -41,7 +41,7 @@ def schedule_matches():
         st.warning("Please add players and courts to schedule matches.")
         return
 
-    # Select match type and format
+    # Match type and format options
     game_type = st.radio("Match Type", ["Doubles", "Singles"], key="game_type")
     format_opt = st.radio("Format", ["Timed", "Fast Four"], key="format_opt")
     leftover_opt = st.radio("Leftover Action", ["Rest", "Play American Doubles"], key="leftover_opt")
@@ -198,4 +198,5 @@ def sidebar_management():
                 save_data()
 
 sidebar_management()  # Add sidebar management back
+schedule_matches()  # Ensure match scheduling is rendered
 control_buttons()  # Call to control buttons and round navigation
