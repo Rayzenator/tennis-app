@@ -297,9 +297,12 @@ if 'initialized' not in st.session_state:
 
 sidebar_management()
 
-# ✅ Only show leaderboard if players have been loaded
-if 'players' in st.session_state and st.session_state.players:
-    player_scores = load_scores()
-    display_leaderboard(player_scores)
+# Show leaderboard only if there are scores for actual players
+scores = load_scores()
+real_players = st.session_state.get("players", [])
+scored_players = [p for p in scores if p in real_players and scores[p] > 0]
+
+if scored_players:
+    display_leaderboard(scores)
 
 schedule_matches()
