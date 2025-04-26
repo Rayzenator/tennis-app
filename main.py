@@ -230,76 +230,120 @@ def schedule_matches():
         for court, pts in cr:
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
-        # Controls
-        if format_opt == "Timed":
-            if 'timer_started' not in st.session_state:
-                st.session_state.timer_started = False
+        # Define a timer function to handle the countdown and wake lock
+        def start_timer(match_time: int):
+            """
+            Function to start or pause the timer, prevent screen sleep, and display the countdown in the app.
+            match_time: The match time in minutes
+            """
+            if 'is_paused' not in st.session_state:
+                st.session_state.is_paused = False  # Initial state for pause
+                st.session_state.stop_timer = False  # Reset stop flag
+                st.session_state.duration = match_time * 60  # Set initial countdown duration
         
-            start_col, stop_col = st.columns([1, 1])
+            st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
         
-            if start_col.button("Start Play") and not st.session_state.timer_started:
-                st.session_state.timer_started = True
+            # Inject JavaScript with pause and start functionality
+            st.markdown(f"""
+            <div class='big-clock' id='countdown'>Starting...</div>
+            <audio id="beep" preload="auto">
+              <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+            </audio>
+            <script>
+            let duration = {st.session_state.duration};
+            let stop = {st.session_state.stop_timer};
+            let isPaused = {st.session_state.is_paused};
+            const countdown = document.getElementById("countdown");
+            const beep = document.getElementById("beep");
         
-            if stop_col.button("Stop Timer") and st.session_state.timer_started:
-                st.session_state.timer_started = False
+            let wakeLock = null;
+            const requestWakeLock = async () => {{
+                try {{
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }} catch (err) {{
+                    console.error("Wake Lock failed:", err);
+                }}
+            }};
+            requestWakeLock();
         
-            if st.session_state.timer_started:
-                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
-                st.markdown(f"""
-                    <div class='big-clock' id='countdown'>Starting...</div>
-                    <audio id="beep" loop>
-                      <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
-                    </audio>
-                    <script>
-                    let duration = {match_time} * 60;
-                    const countdown = document.getElementById("countdown");
-                    const beep = document.getElementById("beep");
-                    let stop = false;
-                    
-                    /* Wake Lock setup */
-                    let wakeLock = null;
-                    const requestWakeLock = async () => {{
-                      try {{
-                        wakeLock = await navigator.wakeLock.request('screen');
-                      }} catch (err) {{
-                        console.error("Wake Lock failed:", err);
-                      }}
-                    }};
-                    requestWakeLock();
-                    
-                    /* Countdown logic */
-                    const timer = setInterval(() => {{
-                        if (stop) {{
-                            clearInterval(timer);
-                            countdown.innerHTML = "Stopped";
-                            if (wakeLock !== null) {{
-                                wakeLock.release();
-                                wakeLock = null;
-                            }}
-                            return;
+            let timer;
+        
+            // Start or pause the timer
+            const toggleTimer = () => {{
+                if (isPaused) {{
+                    // Resume countdown
+                    isPaused = false;
+                    startCountdown();
+                }} else {{
+                    // Pause countdown
+                    clearInterval(timer);
+                    isPaused = true;
+                    countdown.innerHTML = `${{Math.floor(duration / 60)}}:${{(duration % 60).toString().padStart(2, '0')}} (Paused)`;
+                }}
+            }};
+        
+            // Countdown Timer function
+            const startCountdown = () => {{
+                timer = setInterval(() => {{
+                    if (stop) {{
+                        clearInterval(timer);
+                        countdown.innerHTML = "Stopped";
+                        if (wakeLock) {{
+                            wakeLock.release();
+                            wakeLock = null;
                         }}
-                        const m = Math.floor(duration / 60);
-                        const s = duration % 60;
-                        countdown.innerHTML = `${{m.toString().padStart(2, '0')}}:${{s.toString().padStart(2, '0')}}`;
-                        duration--;
-                        if (duration < 0) {{
-                            clearInterval(timer);
-                            countdown.innerHTML = "00:00";
-                            beep.play();
-                            setTimeout(() => {{
-                                beep.pause();
-                                beep.currentTime = 0;
-                            }}, 10000);
-                            if (wakeLock !== null) {{
-                                wakeLock.release();
-                                wakeLock = null;
-                            }}
-                        }}
-                    }}, 1000);
-                    </script>
-                    """, unsafe_allow_html=True)
+                        return;
+                    }}
         
-                st.success("Countdown running — your screen should stay awake!")
+                    const m = Math.floor(duration / 60);
+                    const s = duration % 60;
+                    countdown.innerHTML = `${{m.toString().padStart(2, '0')}}:${{s.toString().padStart(2, '0')}}`;
+                    duration--;
+        
+                    if (duration < 0) {{
+                        clearInterval(timer);
+                        countdown.innerHTML = "00:00";
+                        beep.play();
+                        setTimeout(() => {{
+                            beep.pause();
+                            beep.currentTime = 0;
+                        }}, 10000);
+                        if (wakeLock) {{
+                            wakeLock.release();
+                            wakeLock = null;
+                        }}
+                    }}
+                }}, 1000);
+            }};
+        
+            // Start the timer if it's not paused
+            if (!isPaused) {{
+                startCountdown();
+            }}
+            
+            // Expose toggle function to Streamlit
+            window.toggleTimer = toggleTimer;
+            </script>
+            """, unsafe_allow_html=True)
+        
+            st.success("Timer started. Screen will stay awake.")
+        
+        # Main app logic
+        if 'match_time' not in st.session_state:
+            st.session_state.match_time = 15  # Default match time
+        
+        # Timer Start button
+        if st.button("Start Play"):
+            start_timer(st.session_state.match_time)
+        
+        # Pause/Resume button
+        if st.button("Pause/Resume Timer"):
+            # Toggle pause state in session state
+            st.session_state.is_paused = not st.session_state.is_paued
+            st.success("Timer paused." if st.session_state.is_paused else "Timer resumed.")
+            
+            # Trigger JavaScript toggle function
+            st.markdown("<script>window.toggleTimer();</script>", unsafe_allow_html=True)
         else:
             if st.button("Begin Fast Four"):
                 st.info("Fast Four match: first to 4 games wins.")
