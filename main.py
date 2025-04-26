@@ -51,59 +51,70 @@ def save_data():
 def sidebar_management():
     with st.sidebar:
         tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
+
+        # --- Courts Tab ---
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
             st.header("Courts")
             from streamlit_sortables import sort_items
+
             st.markdown("Drag to reorder:")
-            new_order = sort_items(st.session_state.courts, direction="vertical", key="court_sort")
+            new_order = sort_items(
+                st.session_state.courts,
+                direction="vertical",
+                key="sortable_courts_tab"
+            )
+
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
                 save_data()
 
-            # Show remove buttons separately
             for i, court in enumerate(st.session_state.courts):
                 c1, c2 = st.columns([8, 1])
                 c1.write(court)
-                if c2.button("❌", key=f"rm_court_{i}"):
+                if c2.button("❌", key=f"remove_court_{i}"):
                     st.session_state.courts.pop(i)
                     save_data()
-            
-            new = st.text_input("Add Court", key="court_in")
-            if st.button("Add Court") and new:
+                    st.session_state.court_input = ""  # reset input
+
+            new = st.text_input("Add Court", key="court_input")
+            if st.button("Add Court", key="btn_add_court") and new:
                 if new not in st.session_state.courts:
                     st.session_state.courts.append(new)
                     save_data()
-                    st.experimental_set_query_params()  # Trigger re-run on UI update
+                    st.session_state.court_input = ""  # Clear input
                 else:
                     st.warning("Court already exists.")
-            
-            if st.button("Reset Courts"):
+
+            if st.button("Reset Courts", key="btn_reset_courts"):
                 st.session_state.courts = []
                 save_data()
 
+        # --- Players Tab ---
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
             st.header("Players")
+
             for i, player in enumerate(st.session_state.players):
                 p1, p2 = st.columns([8, 1])
                 p1.write(player)
-                if p2.button("❌", key=f"rm_player_{i}"):
+                if p2.button("❌", key=f"remove_player_{i}"):
                     st.session_state.players.pop(i)
                     save_data()
+                    st.session_state.player_input = ""  # reset input
 
-            newp = st.text_input("Add Player", key="player_in")
-            if st.button("Add Player") and newp:
+            newp = st.text_input("Add Player", key="player_input")
+            if st.button("Add Player", key="btn_add_player") and newp:
                 if newp not in st.session_state.players:
                     st.session_state.players.append(newp)
                     save_data()
-                    st.experimental_set_query_params()  # Trigger re-run on UI update
+                    st.session_state.player_input = ""  # Clear input
                 else:
                     st.warning("Player already exists.")
-            
-            if st.button("Reset Players"):
+
+            if st.button("Reset Players", key="btn_reset_players"):
                 st.session_state.players = []
                 save_data()
 
