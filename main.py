@@ -1,9 +1,9 @@
 import streamlit as st
-import time
 import random
+import time
+from collections import defaultdict
 import json
 import os
-from collections import defaultdict
 import pandas as pd
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
@@ -32,6 +32,17 @@ CLOCK_STYLE = """
     border-radius: 15px;
 }
 </style>
+"""
+ALERT_SOUND = """
+<audio id="beep" autoplay loop>
+  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+  Your browser does not support the audio element.
+</audio>
+<script>
+  const sound = document.getElementById('beep');
+  sound.play();
+  setTimeout(() => { sound.pause(); sound.currentTime = 0; }, 10000);
+</script>
 """
 
 # Data persistence
@@ -218,19 +229,49 @@ def schedule_matches():
         cr = st.session_state.schedule[r-1]
         for court, pts in cr:
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
-            
-            def start_timer(match_time: int, round_num: int):
-                """
-                Function to start or pause the timer, prevent screen sleep, and display the countdown in the app.
-                match_time: The match time in minutes
-                """
-                if 'is_paused' not in st.session_state:
-                    st.session_state.is_paused = False  # Initial state for pause
-                    st.session_state.stop_timer = False  # Reset stop flag
-                    st.session_state.duration = match_time * 60  # Set initial countdown duration
 
-                # Ensure a unique timer ID
-                countdown_id = f"countdown_{round_num}"
+        # Controls
+        if format_opt == "Timed":
+            if st.button("Start Play"):
+                total = match_time * 60
+                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
+                pl = st.empty()
+                for t in range(total,0,-1):
+                    m,s=divmod(t,60)
+                    pl.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
+                    time.sleep(1)
+                pl.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
+                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
+                st.success("Time's up!")
+        else:
+            if st.button("Begin Fast Four"):
+                st.info("Fast Four match: first to 4 games wins.")
+
+        # Exports
+        st.download_button("PDF", data=generate_pdf(cr,r), file_name=f"round_{r}.pdf")
+        st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
+
+    # Navigation & reset
+    c1, c2, c3 = st.columns(3)
+    if c1.button("Previous Round") and st.session_state.round > 1:
+        st.session_state.round -= 1
+    if st.session_state.round < len(st.session_state.schedule):
+        if c2.button("Next Round"):
+            st.session_state.round += 1
+    else:
+        c2.button("Next Round", disabled=True)
+    if c3.button("Reset Rounds"):
+        st.session_state.schedule = []
+        st.session_state.history = defaultdict(lambda: defaultdict(int))
+        st.session_state.round = 0
+        st.session_state.recent_ad = set()
+
+# Initialize
+if 'initialized' not in st.session_state:
+    d = load_data()
+    st.session_state.courts = d['courts']
+    st.session_state.players = d['players']
+    st.session_state.initialized = True
 
 sidebar_management()
 schedule_matches()
