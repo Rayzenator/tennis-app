@@ -297,12 +297,24 @@ if 'initialized' not in st.session_state:
 
 sidebar_management()
 
+def display_leaderboard(player_scores):
+    # Filter out default players or placeholders
+    real_players = st.session_state.get("players", [])
+    filtered_scores = {player: score for player, score in player_scores.items() if player in real_players}
+    
+    # Sort and display the leaderboard
+    sorted_scores = sorted(filtered_scores.items(), key=lambda x: x[1], reverse=True)
+    st.write("### Leaderboard")
+    for i, (player, score) in enumerate(sorted_scores, start=1):
+        st.write(f"{i}. {player}: {score} points")
+        
+#######################
 # Show leaderboard only if there are scores for actual players
-scores = load_scores()
-real_players = st.session_state.get("players", [])
-scored_players = [p for p in scores if p in real_players and scores[p] > 0]
+# scores = load_scores()
+# real_players = st.session_state.get("players", [])
+# scored_players = [p for p in scores if p in real_players and scores[p] > 0]
 
-if scored_players:
-    display_leaderboard(scores)
-
+# if scored_players:
+#     display_leaderboard(scores)
+###########################
 schedule_matches()
