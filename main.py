@@ -75,7 +75,6 @@ def sidebar_management():
                     if new not in st.session_state.courts:
                         st.session_state.courts.append(new)
                         save_data()
-                        st.experimental_memo()  # Ensure the app state is reflected immediately
                     else:
                         st.warning("Court already exists.")
                 except Exception as e:
