@@ -105,6 +105,12 @@ def control_buttons():
         for court, match_players in current_round_matches:
             st.write(f"**Court {court}:** {match_players[0]} vs {match_players[1]}")
 
+# Reset Rounds button
+if st.button("Reset Rounds"):
+    st.session_state.rounds = []
+    st.session_state.current_round = 0
+    st.write("Rounds have been reset!")
+
 # PDF & CSV export helpers
 def generate_pdf(matches, rnd):
     buf = BytesIO()
@@ -139,4 +145,57 @@ if 'initialized' not in st.session_state:
     st.session_state.players = d['players']
     st.session_state.initialized = True
 
+# Sidebar management
+def sidebar_management():
+    with st.sidebar:
+        tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
+        with tab1:
+            if 'courts' not in st.session_state:
+                st.session_state.courts = []
+            st.header("Courts")
+            from streamlit_sortables import sort_items
+            st.markdown("Drag to reorder:")
+            new_order = sort_items(st.session_state.courts, direction="vertical")
+            if new_order != st.session_state.courts:
+                st.session_state.courts = new_order
+                save_data()
+
+            for i, court in enumerate(st.session_state.courts):
+                c1, c2 = st.columns([8, 1])
+                c1.write(court)
+                if c2.button("❌", key=f"rm_court_{i}"):
+                    st.session_state.courts.pop(i)
+                    save_data()
+            new = st.text_input("Add Court", key="court_in")
+            if st.button("Add Court") and new:
+                if new not in st.session_state.courts:
+                    st.session_state.courts.append(new)
+                    save_data()
+                else:
+                    st.warning("Court already exists.")
+            if st.button("Reset Courts"):
+                st.session_state.courts = []
+                save_data()
+        with tab2:
+            if 'players' not in st.session_state:
+                st.session_state.players = []
+            st.header("Players")
+            for i, player in enumerate(st.session_state.players):
+                p1, p2 = st.columns([8, 1])
+                p1.write(player)
+                if p2.button("❌", key=f"rm_player_{i}"):
+                    st.session_state.players.pop(i)
+                    save_data()
+            newp = st.text_input("Add Player", key="player_in")
+            if st.button("Add Player") and newp:
+                if newp not in st.session_state.players:
+                    st.session_state.players.append(newp)
+                    save_data()
+                else:
+                    st.warning("Player already exists.")
+            if st.button("Reset Players"):
+                st.session_state.players = []
+                save_data()
+
+sidebar_management()  # Add sidebar management back
 control_buttons()  # Call to control buttons and round navigation
