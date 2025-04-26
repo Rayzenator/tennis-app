@@ -62,7 +62,7 @@ def sidebar_management():
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
                 save_data()
-            
+
             # Show remove buttons separately
             for i, court in enumerate(st.session_state.courts):
                 c1, c2 = st.columns([8, 1])
@@ -75,11 +75,13 @@ def sidebar_management():
                 if new not in st.session_state.courts:
                     st.session_state.courts.append(new)
                     save_data()
+                    st.experimental_memo()  # Ensure the app state is reflected immediately
                 else:
                     st.warning("Court already exists.")
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
+
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
