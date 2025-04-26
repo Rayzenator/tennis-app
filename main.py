@@ -49,10 +49,7 @@ def save_data():
     with open(DATA_FILE, 'w') as f:
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
-def get_sort_key(items):
-    hash_input = ",".join(items)
-    return "sort_" + hashlib.md5(hash_input.encode()).hexdigest()
-    
+
 def sidebar_management():
     if 'courts' not in st.session_state:
         st.session_state.courts = []
@@ -68,9 +65,12 @@ def sidebar_management():
             st.markdown("Drag to reorder:")
     
             # Generate a unique key to avoid StreamlitDuplicateElementKey
-            sort_key = get_sort_key(st.session_state.courts)
-            new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
+            def get_sort_key(items):
+                import hashlib
+                hash_input = ",".join(items)
+                return "sort_" + hashlib.md5(hash_input.encode()).hexdigest()
             
+            sort_key = get_sort_key(st.session_state.courts)
             new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
