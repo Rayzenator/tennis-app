@@ -9,7 +9,7 @@ from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from streamlit_sortables import sort_items
-from hashlib import sha1
+import hashlib
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -65,12 +65,18 @@ def sidebar_management():
             st.markdown("Drag to reorder:")
     
             # Generate a unique key to avoid StreamlitDuplicateElementKey
+            # Function to generate a unique key based on the courts list
             def get_sort_key(items):
-                import hashlib
                 hash_input = ",".join(items)
                 return "sort_" + hashlib.md5(hash_input.encode()).hexdigest()
             
+            if 'courts' not in st.session_state:
+                st.session_state.courts = []
+            
+            # When courts change, reset the sort_key
             sort_key = get_sort_key(st.session_state.courts)
+            
+            # Use the updated key
             new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
