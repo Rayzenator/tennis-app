@@ -1,10 +1,9 @@
 import streamlit as st
 import time
 import random
-import time
-from collections import defaultdict
 import json
 import os
+from collections import defaultdict
 import pandas as pd
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
@@ -33,17 +32,6 @@ CLOCK_STYLE = """
     border-radius: 15px;
 }
 </style>
-"""
-ALERT_SOUND = """
-<audio id="beep" autoplay loop>
-  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
-  Your browser does not support the audio element.
-</audio>
-<script>
-  const sound = document.getElementById('beep');
-  sound.play();
-  setTimeout(() => { sound.pause(); sound.currentTime = 0; }, 10000);
-</script>
 """
 
 # Data persistence
@@ -231,19 +219,7 @@ def schedule_matches():
         for court, pts in cr:
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
             
-            # Define the clock style (You can customize this)
-            CLOCK_STYLE = """
-            <style>
-                .big-clock {
-                    font-size: 60px;
-                    font-weight: bold;
-                    text-align: center;
-                    margin-top: 20px;
-                }
-            </style>
-            """
-            
-            def start_timer(match_time: int):
+            def start_timer(match_time: int, round_num: int):
                 """
                 Function to start or pause the timer, prevent screen sleep, and display the countdown in the app.
                 match_time: The match time in minutes
@@ -252,143 +228,9 @@ def schedule_matches():
                     st.session_state.is_paused = False  # Initial state for pause
                     st.session_state.stop_timer = False  # Reset stop flag
                     st.session_state.duration = match_time * 60  # Set initial countdown duration
-            
-                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
-            
-                # Create a unique ID for this timer's countdown display
-                countdown_id = f"countdown_{st.session_state.match_time}_{int(time.time())}"
-            
-                # Inject JavaScript with pause and start functionality, but without showing the code on the page
-                st.markdown(f"""
-                <div class='big-clock' id='{countdown_id}'>Starting...</div>
-                <audio id="beep" preload="auto">
-                  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
-                </audio>
-                <script>
-                let duration = {st.session_state.duration};
-                let stop = {st.session_state.stop_timer};
-                let isPaused = {st.session_state.is_paused};
-                const countdown = document.getElementById("{countdown_id}");
-                const beep = document.getElementById("beep");
-            
-                let wakeLock = null;
-                const requestWakeLock = async () => {{
-                    try {{
-                        wakeLock = await navigator.wakeLock.request('screen');
-                    }} catch (err) {{
-                        console.error("Wake Lock failed:", err);
-                    }}
-                }};
-                requestWakeLock();
-            
-                let timer;
-            
-                // Start or pause the timer
-                const toggleTimer = () => {{
-                    if (isPaused) {{
-                        // Resume countdown
-                        isPaused = false;
-                        startCountdown();
-                    }} else {{
-                        // Pause countdown
-                        clearInterval(timer);
-                        isPaused = true;
-                        countdown.innerHTML = `${{Math.floor(duration / 60)}}:${{(duration % 60).toString().padStart(2, '0')}} (Paused)`;
-                    }}
-                }};
-            
-                // Countdown Timer function
-                const startCountdown = () => {{
-                    timer = setInterval(() => {{
-                        if (stop) {{
-                            clearInterval(timer);
-                            countdown.innerHTML = "Stopped";
-                            if (wakeLock) {{
-                                wakeLock.release();
-                                wakeLock = null;
-                            }}
-                            return;
-                        }}
-            
-                        const m = Math.floor(duration / 60);
-                        const s = duration % 60;
-                        countdown.innerHTML = `${{m.toString().padStart(2, '0')}}:${{s.toString().padStart(2, '0')}}`;
-                        duration--;
-            
-                        if (duration < 0) {{
-                            clearInterval(timer);
-                            countdown.innerHTML = "00:00";
-                            beep.play();
-                            setTimeout(() => {{
-                                beep.pause();
-                                beep.currentTime = 0;
-                            }}, 10000);
-                            if (wakeLock) {{
-                                wakeLock.release();
-                                wakeLock = null;
-                            }}
-                        }}
-                    }}, 1000);
-                }};
-            
-                // Start the timer if it's not paused
-                if (!isPaused) {{
-                    startCountdown();
-                }}
-                
-                // Expose toggle function to Streamlit
-                window.toggleTimer = toggleTimer;
-                </script>
-                """, unsafe_allow_html=True)
-            
-                st.success("Timer started. Screen will stay awake.")
-            
-            # Main app logic
-            if 'match_time' not in st.session_state:
-                st.session_state.match_time = 15  # Default match time
-            
-            # Timer Start button
-            if st.button("Start Play"):
-                start_timer(st.session_state.match_time)
-            
-            # Pause/Resume button
-            if st.button("Pause/Resume Timer"):
-                # Toggle pause state in session state
-                st.session_state.is_paused = not st.session_state.is_paused
-                st.success("Timer paused." if st.session_state.is_paused else "Timer resumed.")
-                
-                # Trigger JavaScript toggle function
-                st.markdown("<script>window.toggleTimer();</script>", unsafe_allow_html=True)
-        else:
-            if st.button("Begin Fast Four"):
-                st.info("Fast Four match: first to 4 games wins.")
 
-        # Exports
-        st.download_button("PDF", data=generate_pdf(cr,r), file_name=f"round_{r}.pdf")
-        st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
-
-    # Navigation & reset
-    c1, c2, c3 = st.columns(3)
-    if c1.button("Previous Round") and st.session_state.round > 1:
-        st.session_state.round -= 1
-    if st.session_state.round < len(st.session_state.schedule):
-        if c2.button("Next Round"):
-            st.session_state.round += 1
-    else:
-        c2.button("Next Round", disabled=True)
-    if c3.button("Reset Rounds"):
-        st.session_state.schedule = []
-        st.session_state.history = defaultdict(lambda: defaultdict(int))
-        st.session_state.round = 0
-        st.session_state.recent_ad = set()
-
-# Initialize
-if 'initialized' not in st.session_state:
-    d = load_data()
-    st.session_state.courts = d['courts']
-    st.session_state.players = d['players']
-    st.session_state.initialized = True
+                # Ensure a unique timer ID
+                countdown_id = f"countdown_{round_num}"
 
 sidebar_management()
 schedule_matches()
-
