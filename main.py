@@ -128,7 +128,7 @@ def sidebar_management():
             if st.button("Reset Players"):
                 st.session_state.players = []
                 save_data()
-       with tab3:
+        with tab3:
             st.header("Settings")
             if "confirm_delete_scores" not in st.session_state:
                 st.session_state.confirm_delete_scores = False
