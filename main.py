@@ -64,19 +64,14 @@ def sidebar_management():
             st.header("Courts")
             st.markdown("Drag to reorder:")
     
-            # Generate a unique key to avoid StreamlitDuplicateElementKey
-            # Function to generate a unique key based on the courts list
+            # Function to generate a unique key based on the courts list and timestamp
             def get_sort_key(items):
                 hash_input = ",".join(items)
-                return "sort_" + hashlib.md5(hash_input.encode()).hexdigest()
+                return "sort_" + hashlib.md5(hash_input.encode()).hexdigest() + str(time.time())
             
-            if 'courts' not in st.session_state:
-                st.session_state.courts = []
-            
-            # When courts change, reset the sort_key
             sort_key = get_sort_key(st.session_state.courts)
             
-            # Use the updated key
+            # Now use this sort_key when calling the sort_items function
             new_order = sort_items(st.session_state.courts, direction="vertical", key=sort_key)
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
