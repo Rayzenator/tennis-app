@@ -222,6 +222,21 @@ def schedule_matches():
     st.download_button("Download as PDF", generate_pdf(matches, 1), file_name="tennis_schedule.pdf")
     st.download_button("Download as CSV", generate_csv(matches), file_name="tennis_schedule.csv")
 
+# Add manual control buttons
+def control_buttons():
+    # Button to generate a new round
+    if st.button("Generate Round"):
+        schedule_matches()
+
+    # Button to reset rounds and start fresh
+    if st.button("Reset Rounds"):
+        st.session_state.matches = []
+        st.write("Rounds reset. Please generate new rounds.")
+        
+    # Reset player availability
+    if st.button("Reset Player Availability"):
+        st.session_state.player_status = {}
+
 # Run app
 if 'initialized' not in st.session_state:
     d = load_data()
@@ -230,4 +245,5 @@ if 'initialized' not in st.session_state:
     st.session_state.initialized = True
 
 sidebar_management()
+control_buttons()
 schedule_matches()
