@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 import random
 import time
 from collections import defaultdict
@@ -254,9 +255,12 @@ def schedule_matches():
             
                 st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
             
+                # Create a unique ID for this timer's countdown display
+                countdown_id = f"countdown_{st.session_state.match_time}_{int(time.time())}"
+            
                 # Inject JavaScript with pause and start functionality, but without showing the code on the page
                 st.markdown(f"""
-                <div class='big-clock' id='countdown'>Starting...</div>
+                <div class='big-clock' id='{countdown_id}'>Starting...</div>
                 <audio id="beep" preload="auto">
                   <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
                 </audio>
@@ -264,7 +268,7 @@ def schedule_matches():
                 let duration = {st.session_state.duration};
                 let stop = {st.session_state.stop_timer};
                 let isPaused = {st.session_state.is_paused};
-                const countdown = document.getElementById("countdown");
+                const countdown = document.getElementById("{countdown_id}");
                 const beep = document.getElementById("beep");
             
                 let wakeLock = null;
