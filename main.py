@@ -72,12 +72,11 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
-# Sidebar management code (before leaderboard integration)
+# Sidebar management
 def sidebar_management():
     with st.sidebar:
         tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
         with tab1:
-            # Courts management code
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
             st.header("Courts")
@@ -105,7 +104,6 @@ def sidebar_management():
                 st.session_state.courts = []
                 save_data()
         with tab2:
-            # Players management code
             if 'players' not in st.session_state:
                 st.session_state.players = []
             st.header("Players")
@@ -126,35 +124,11 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
-# Updated sidebar split into two columns: courts/players and leaderboard
-with st.sidebar:
-    col1, col2 = st.columns([2, 3])  # Adjust the column width as needed
-
-    with col1:
-        # Courts and Players Management
-        sidebar_management()
-
-    with col2:
-        # Display the leaderboard in the second column
-        scores = load_scores()
-        real_players = st.session_state.get("players", [])
-        
-        # Ensure leaderboard displays even if no rounds have been generated yet
-        scored_players = [p for p in scores if p in real_players and scores[p] > 0]
-        
-        if scored_players:
-            display_leaderboard(scores)
-        else:
-            # If no scores yet, show a message that scores will appear after matches
-            st.write("Leaderboard will be updated after matches are played.")
-
-# Display the leaderboard in a formatted table
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
-    leaderboard_data = [(i+1, player, score) for i, (player, score) in enumerate(sorted_scores)]
-    df = pd.DataFrame(leaderboard_data, columns=["Rank", "Player", "Score"])
     st.write("### Leaderboard")
-    st.dataframe(df)
+    for i, (player, score) in enumerate(sorted_scores, start=1):
+        st.write(f"{i}. {player}: {score} points")
 
 def update_scores(current_scores, players, new_scores):
     for player in players:
@@ -321,19 +295,32 @@ if 'initialized' not in st.session_state:
     st.session_state.players = d['players']
     st.session_state.initialized = True
 
-# Create two columns in the sidebar for courts/players management and leaderboard
+# Sidebar with courts/players and leaderboard
 with st.sidebar:
     col1, col2 = st.columns([2, 3])  # Adjust the column width as needed
 
     with col1:
+        # Courts and Players Management
         sidebar_management()
 
     with col2:
-        # Display the leaderboard in the second column
+        # Display leaderboard in the second column
         scores = load_scores()
         real_players = st.session_state.get("players", [])
+        
         scored_players = [p for p in scores if p in real_players and scores[p] > 0]
+        
         if scored_players:
             display_leaderboard(scores)
+        else:
+            st.write("Leaderboard will be updated after matches are played.")
+
+# Show leaderboard only if there are scores for actual players
+scores = load_scores()
+real_players = st.session_state.get("players", [])
+scored_players = [p for p in scores if p in real_players and scores[p] > 0]
+
+if scored_players:
+    display_leaderboard(scores)
 
 schedule_matches()
