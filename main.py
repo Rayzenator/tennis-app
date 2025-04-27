@@ -305,6 +305,27 @@ def schedule_matches():
 
     st.header("Schedule Matches")
 
+    # Sidebar for Player and Court Selection
+    st.sidebar.header("Select Players and Courts")
+
+    available_players = st.session_state.players
+    available_courts = st.session_state.courts
+
+    # Sidebar: Player selection
+    selected_players = []
+    st.sidebar.subheader("Select Players:")
+    for player in available_players:
+        if st.sidebar.checkbox(f"Select {player}", key=player):
+            selected_players.append(player)
+
+    # Sidebar: Court selection
+    selected_courts = []
+    st.sidebar.subheader("Select Courts:")
+    for court in available_courts:
+        if st.sidebar.checkbox(f"Select Court {court}", key=f"court_{court}"):
+            selected_courts.append(court)
+
+    # Match type and format
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
 
@@ -314,27 +335,6 @@ def schedule_matches():
         match_time = st.number_input("Match Time (minutes)", 5, 60, 15)
     else:
         st.info("Fast Four: first to 4 games wins.")
-
-    # Display checkboxes for players and courts
-    st.subheader("Select Players and Courts")
-
-    available_players = st.session_state.players
-    available_courts = st.session_state.courts
-    
-    selected_players = []
-    selected_courts = []
-
-    # Display checkboxes for players
-    st.write("Select players for the match:")
-    for player in available_players:
-        if st.checkbox(f"Select {player}", key=player):
-            selected_players.append(player)
-    
-    # Display checkboxes for courts
-    st.write("Select courts for the match:")
-    for court in available_courts:
-        if st.checkbox(f"Select Court {court}", key=f"court_{court}"):
-            selected_courts.append(court)
 
     if st.button("Generate Next Round"):
         if not selected_players or not selected_courts:
