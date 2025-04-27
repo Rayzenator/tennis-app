@@ -254,17 +254,35 @@ def schedule_matches():
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
         if format_opt == "Timed":
-            if st.button("Start Play"):
-                total = match_time * 60
-                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
-                pl = st.empty()
-                for t in range(total,0,-1):
-                    m,s=divmod(t,60)
-                    pl.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
-                    time.sleep(1)
-                pl.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
-                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
-                st.success("Time's up!")
+            if not st.session_state.timer_started:
+                if st.button("Start Timer"):
+                    st.session_state.timer_started = True
+                    st.session_state.start_time = time.time()  # Initialize the start time
+                    st.session_state.running = True
+                    st.session_state.time_left = match_time * 60  # Timer duration in seconds
+                    st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
+            else:
+                if st.button("Stop Timer"):
+                    st.session_state.timer_started = False
+                    st.session_state.running = False
+                    st.session_state.start_time = 0
+                    st.session_state.time_left = match_time * 60  # Reset timer
+                    st.write("Timer stopped.")
+
+    # Timer UI and dynamic updates
+    if st.session_state.timer_started and st.session_state.running:
+        # Use st.empty() to update the timer dynamically
+        placeholder = st.empty()
+        while st.session_state.running:
+            start_timer(st.session_state.time_left)  # Update the timer
+            time.sleep(1)  # Sleep for 1 second before updating again
+            placeholder.empty()  # Clear previous timer value before updating
+            placeholder.markdown(f"<div class='big-clock'>{minutes:02d}:{seconds:02d}</div>", unsafe_allow_html=True)
+
+        if st.session_state.time_left <= 0:
+            st.session_state.running = False
+            st.success("Time's up!")
+            st.markdown(ALERT_SOUND, unsafe_allow_html=True)
         else:
             if st.button("Begin Fast Four"):
                 st.info("Fast Four match: first to 4 games wins.")
