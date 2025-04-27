@@ -43,13 +43,13 @@ ALERT_SOUND = """
 
 # Timer logic
 def timer_logic(match_time):
-    if 'start_time' in st.session_state:
-        # Calculate elapsed time
+    # Only run the timer if it's started
+    if 'start_time' in st.session_state and st.session_state.timer_running:
         elapsed_time = time.time() - st.session_state.start_time
         remaining_time = match_time * 60 - elapsed_time
         minutes, seconds = divmod(remaining_time, 60)
         timer_display = f"{int(minutes):02d}:{int(seconds):02d}"
-
+        
         # Update session state with the new timer value
         st.session_state.timer_display = timer_display
 
