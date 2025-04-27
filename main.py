@@ -283,11 +283,35 @@ def schedule_matches():
         st.session_state.round = 0
         st.session_state.recent_ad = set()
 
-if 'initialized' not in st.session_state:
-    d = load_data()
-    st.session_state.courts = d['courts']
-    st.session_state.players = d['players']
-    st.session_state.initialized = True
+def timer_logic(match_time):
+    if 'timer_running' not in st.session_state:
+        st.session_state.timer_running = False
+    if 'timer' not in st.session_state:
+        st.session_state.timer = 0
+    if 'start_time' not in st.session_state:
+        st.session_state.start_time = None
 
-sidebar_management()
-schedule_matches()
+    # Timer display
+    minutes, seconds = divmod(st.session_state.timer, 60)
+    st.markdown(f'<div class="big-clock">{minutes:02d}:{seconds:02d}</div>', unsafe_allow_html=True)
+
+    if st.session_state.timer_running:
+        # Timer logic for countdown
+        elapsed_time = time.time() - st.session_state.start_time
+        st.session_state.timer = int(elapsed_time)
+        if st.session_state.timer >= match_time * 60:
+            st.session_state.timer_running = False
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        if st.button("Start Timer"):
+            st.session_state.start_time = time.time() - st.session_state.timer
+            st.session_state.timer_running = True
+    with col2:
+        if st.button("Pause Timer"):
+            st.session_state.timer_running = False
+    with col3:
+        if st.button("Reset Timer"):
+            st.session_state.timer = 0
+            st.session_state.timer_running = False
+            st.session_state.start_time = None
