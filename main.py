@@ -200,6 +200,10 @@ def schedule_matches():
     if 'recent_ad' not in st.session_state:
         st.session_state.recent_ad = set()
 
+    # Initialize player scores if not already initialized
+    if 'player_scores' not in st.session_state:
+        st.session_state.player_scores = {player: 0 for player in st.session_state.players}
+
     st.header("Schedule Matches")
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
@@ -210,6 +214,9 @@ def schedule_matches():
         st.info("Fast Four: first to 4 games wins.")
 
     if st.button("Generate Next Round"):
+        # Reset player scores to zero for the new round
+        st.session_state.player_scores = {player: 0 for player in st.session_state.players}
+
         players = st.session_state.players.copy()
         random.shuffle(players)
         courts = st.session_state.courts.copy()
@@ -311,6 +318,7 @@ def schedule_matches():
         st.session_state.history = defaultdict(lambda: defaultdict(int))
         st.session_state.round = 0
         st.session_state.recent_ad = set()
+        st.session_state.player_scores = {player: 0 for player in st.session_state.players}
 
 if 'initialized' not in st.session_state:
     d = load_data()
