@@ -75,7 +75,9 @@ def save_data():
 # Sidebar management
 def sidebar_management():
     with st.sidebar:
-        tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
+        tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Leaderboard"])
+        
+        # Tab 1 - Manage Courts
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
@@ -103,6 +105,8 @@ def sidebar_management():
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
+        
+        # Tab 2 - Manage Players
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
@@ -124,11 +128,24 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
+        # Tab 3 - Leaderboard
+        with tab3:
+            player_scores = load_scores()
+            display_leaderboard(player_scores)
+
+            if st.button("Delete All Player Scores"):
+                delete_all_scores()
+
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
     st.write("### Leaderboard")
     for i, (player, score) in enumerate(sorted_scores, start=1):
         st.write(f"{i}. {player}: {score} points")
+
+def delete_all_scores():
+    # Delete all scores by clearing the scores file
+    save_scores({})
+    st.success("All player scores have been deleted.")
 
 def update_scores(current_scores, players, new_scores):
     for player in players:
