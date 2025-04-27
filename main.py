@@ -191,21 +191,6 @@ def schedule_matches():
 
     return matches
 
-# Timer control (added at the end)
-if st.session_state.timer_running:
-    if st.button("Pause Timer"):
-        st.session_state.timer_running = False
-elif st.button("Start Timer"):
-    st.session_state.timer_running = True
-    st.session_state.start_time = time.time()
-
-if st.session_state.timer_running:
-    update_timer()
-
-if st.button("Stop Timer"):
-    st.session_state.timer_running = False
-    st.session_state.timer_display = "00:00"
-
 # Schedule new round
 if st.button("Schedule New Round"):
     st.session_state.round_number += 1
@@ -220,6 +205,27 @@ if st.session_state.history:
         st.write(f"**Court {court}:** {players[0]} vs {players[1]}")
         players_in_round.extend(players)
 
+    # Timer controls
+    st.subheader("Match Timer Controls")
+    if st.session_state.timer_running:
+        if st.button("Pause Timer"):
+            st.session_state.timer_running = False
+    elif st.button("Start Timer"):
+        st.session_state.timer_running = True
+        st.session_state.start_time = time.time()
+
+    if st.session_state.timer_running:
+        update_timer()
+
+    if st.button("Stop Timer"):
+        st.session_state.timer_running = False
+        st.session_state.timer_display = "00:00"
+
+    # Display Timer at the end (Big Clock)
+    st.write("### Match Timer")
+    st.markdown(f"<h1 style='text-align: center; color: white;'>{st.session_state.timer_display}</h1>", unsafe_allow_html=True)
+
+    # Score entry
     st.subheader("Enter Scores")
     scores = {}
     for player in players_in_round:
@@ -235,8 +241,3 @@ if st.session_state.history:
 
     st.download_button("Download as PDF", generate_pdf(latest_round['matches'], latest_round['round']), file_name=f"tennis_schedule_round_{latest_round['round']}.pdf")
     st.download_button("Download as CSV", generate_csv(latest_round['matches']), file_name=f"tennis_schedule_round_{latest_round['round']}.csv")
-
-    # Display Timer at the end (Big Clock)
-    st.write("### Match Timer")
-    st.write(f"**Time Remaining:**")
-    st.markdown(f"<h1 style='text-align: center; color: white;'>{st.session_state.timer_display}</h1>", unsafe_allow_html=True)
