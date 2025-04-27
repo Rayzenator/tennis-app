@@ -251,16 +251,24 @@ def schedule_matches():
         r = st.session_state.round
         st.subheader(f"Round {r}")
         cr = st.session_state.schedule[r - 1]
+        
+        # Display all matches in a table for score entry
+        scores = {}
         for court, players in cr:
-            st.write(f"{court}: {', '.join(players)}")
-            scores = {}
             for player in players:
-                score = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}_{r}_{court}")
-                scores[player] = score
-            if st.button(f"Submit Scores for {court}", key=f"submit_scores_{r}_{court}"):
-                update_scores(load_scores(), players, scores)
-                sidebar_management()  # Refresh leaderboard
+                score_key = f"score_{r}_{court}_{player}"
+                scores[score_key] = st.number_input(f"Score for {player} (Court: {court})", min_value=0, value=0, key=score_key)
+        
+        # Submit button for all scores
+        if st.button(f"Submit Scores for Round {r}"):
+            # Collect all scores
+            round_scores = {player: scores[f"score_{r}_{court}_{player}"] for court, players in cr for player in players}
+            player_scores = update_scores(load_scores(), [player for court, players in cr for player in players], round_scores)
+            save_scores(player_scores)
+            st.success("Scores submitted successfully!")
+            sidebar_management()  # Refresh leaderboard
 
+        # CSV and PDF export buttons
         st.download_button(
             "Download CSV", generate_csv(cr), file_name=f"round_{r}.csv", mime="text/csv"
         )
