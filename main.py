@@ -9,6 +9,11 @@ from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
+
+
+# Page configuration and dark mode styling
+st.set_page_config(page_title="Tennis Scheduler", layout="wide")
+
 st.markdown(
     """
     <style>
@@ -47,8 +52,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Page configuration and dark mode styling
-st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 DARK_MODE_STYLE = """
 <style>
 body { background-color: #1e1e1e; color: white; }
