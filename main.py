@@ -253,6 +253,16 @@ def schedule_matches():
         for court, pts in cr:
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
+       # Ensure that the necessary session state attributes are initialized
+        if 'timer_started' not in st.session_state:
+            st.session_state.timer_started = False
+        if 'running' not in st.session_state:
+            st.session_state.running = False
+        if 'time_left' not in st.session_state:
+            st.session_state.time_left = match_time * 60  # Default to match_time in seconds
+        if 'start_time' not in st.session_state:
+            st.session_state.start_time = 0
+        
         if format_opt == "Timed":
             if not st.session_state.timer_started:
                 if st.button("Start Timer"):
@@ -269,23 +279,23 @@ def schedule_matches():
                     st.session_state.time_left = match_time * 60  # Reset timer
                     st.write("Timer stopped.")
 
-    # Timer UI and dynamic updates
-    if st.session_state.timer_started and st.session_state.running:
-        # Use st.empty() to update the timer dynamically
-        placeholder = st.empty()
-        while st.session_state.running:
-            start_timer(st.session_state.time_left)  # Update the timer
-            time.sleep(1)  # Sleep for 1 second before updating again
-            placeholder.empty()  # Clear previous timer value before updating
-            placeholder.markdown(f"<div class='big-clock'>{minutes:02d}:{seconds:02d}</div>", unsafe_allow_html=True)
-
-        if st.session_state.time_left <= 0:
-            st.session_state.running = False
-            st.success("Time's up!")
-            st.markdown(ALERT_SOUND, unsafe_allow_html=True)
-        else:
-            if st.button("Begin Fast Four"):
-                st.info("Fast Four match: first to 4 games wins.")
+               # Timer UI and dynamic updates
+                if st.session_state.timer_started and st.session_state.running:
+                    # Use st.empty() to update the timer dynamically
+                    placeholder = st.empty()
+                    while st.session_state.running:
+                        start_timer(st.session_state.time_left)  # Update the timer
+                        time.sleep(1)  # Sleep for 1 second before updating again
+                        placeholder.empty()  # Clear previous timer value before updating
+                        placeholder.markdown(f"<div class='big-clock'>{minutes:02d}:{seconds:02d}</div>", unsafe_allow_html=True)
+            
+                    if st.session_state.time_left <= 0:
+                        st.session_state.running = False
+                        st.success("Time's up!")
+                        st.markdown(ALERT_SOUND, unsafe_allow_html=True)
+                    else:
+                        if st.button("Begin Fast Four"):
+                            st.info("Fast Four match: first to 4 games wins.")
 
         match_players = [player for _, group in cr for player in group if player != "Rest"]
         match_results(match_players)
