@@ -1,8 +1,13 @@
 import streamlit as st
 import random
+import time
+from collections import defaultdict
 import json
 import os
-from collections import defaultdict
+import pandas as pd
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -13,6 +18,32 @@ body { background-color: #1e1e1e; color: white; }
 </style>
 """
 st.markdown(DARK_MODE_STYLE, unsafe_allow_html=True)
+
+# Clock & alert styles
+CLOCK_STYLE = """
+<style>
+.big-clock {
+    font-size: 72px;
+    font-weight: bold;
+    color: #00FF00;
+    background-color: #000000;
+    padding: 20px;
+    text-align: center;
+    border-radius: 15px;
+}
+</style>
+"""
+ALERT_SOUND = """
+<audio id="beep" autoplay loop>
+  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+  Your browser does not support the audio element.
+</audio>
+<script>
+  const sound = document.getElementById('beep');
+  sound.play();
+  setTimeout(() => { sound.pause(); sound.currentTime = 0; }, 10000);
+</script>
+"""
 
 # Data persistence
 DATA_FILE = "data.json"
@@ -44,7 +75,9 @@ def save_data():
 # Sidebar management
 def sidebar_management():
     with st.sidebar:
-        tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
+        tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Leaderboard"])
+        
+        # Tab 1 - Manage Courts
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
@@ -72,6 +105,8 @@ def sidebar_management():
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
+        
+        # Tab 2 - Manage Players
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
@@ -93,11 +128,24 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
+        # Tab 3 - Leaderboard
+        with tab3:
+            player_scores = load_scores()
+            display_leaderboard(player_scores)
+
+            if st.button("Delete All Player Scores"):
+                delete_all_scores()
+
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
     st.write("### Leaderboard")
     for i, (player, score) in enumerate(sorted_scores, start=1):
         st.write(f"{i}. {player}: {score} points")
+
+def delete_all_scores():
+    # Delete all scores by clearing the scores file
+    save_scores({})
+    st.success("All player scores have been deleted.")
 
 def update_scores(current_scores, players, new_scores):
     for player in players:
@@ -222,11 +270,26 @@ def schedule_matches():
         for court, pts in cr:
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
-        if st.button("Start Play"):
-            match_players = [player for _, group in cr for player in group if player != "Rest"]
-            match_results(match_players)
+        if format_opt == "Timed":
+            if st.button("Start Play"):
+                total = match_time * 60
+                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
+                pl = st.empty()
+                for t in range(total,0,-1):
+                    m,s=divmod(t,60)
+                    pl.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
+                    time.sleep(1)
+                pl.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
+                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
+                st.success("Time's up!")
+        else:
+            if st.button("Begin Fast Four"):
+                st.info("Fast Four match: first to 4 games wins.")
 
-        st.download_button("PDF", data=generate_pdf(cr, r), file_name=f"round_{r}.pdf")
+        match_players = [player for _, group in cr for player in group if player != "Rest"]
+        match_results(match_players)
+
+        st.download_button("PDF", data=generate_pdf(cr,r), file_name=f"round_{r}.pdf")
         st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
 
     c1, c2, c3 = st.columns(3)
