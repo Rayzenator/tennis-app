@@ -172,16 +172,7 @@ def schedule_matches():
     else:
         st.info("Fast Four: first to 4 games wins.")
 
-    # Display "Start Play" button only after round is generated
-    if st.session_state.round > 0:
-        start_play_button = st.button("Start Play", key="start_play_button")
-        if start_play_button:
-            st.session_state.start_time = time.time()  # Start timer when "Start Play" is clicked
-
-    # Timer display - Call timer_logic only when the match is started
-    if 'start_time' in st.session_state:
-        timer_logic(match_time)
-
+    # Display the round and "Start Play" button only after round is generated
     if st.button("Generate Next Round"):
         players = st.session_state.players.copy()
         random.shuffle(players)
@@ -237,26 +228,17 @@ def schedule_matches():
         st.session_state.schedule.append(matches)
         st.session_state.round = len(st.session_state.schedule)
 
-    if st.session_state.schedule and st.session_state.round > 0:
-        r = st.session_state.round
-        st.subheader(f"Round {r}")
-        cr = st.session_state.schedule[r-1]
-        for court, pts in cr:
-            st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
+        # Display the round details
+        st.subheader(f"Round {st.session_state.round}")
+        for court, players in matches:
+            st.markdown(f"**Court {court}:** {' vs '.join(players)}")
 
-    c1, c2, c3 = st.columns(3)
-    if c1.button("Previous Round") and st.session_state.round > 1:
-        st.session_state.round -= 1
-    if st.session_state.round < len(st.session_state.schedule):
-        if c2.button("Next Round"):
-            st.session_state.round += 1
-    else:
-        c2.button("Next Round", disabled=True)
-    if c3.button("Reset Rounds"):
-        st.session_state.schedule = []
-        st.session_state.history = defaultdict(lambda: defaultdict(int))
-        st.session_state.round = 0
-        st.session_state.recent_ad = set()
+        # Now show the Start Play button
+        st.button("Start Play", key="start_play_button")
+
+    # Timer logic (triggered after "Start Play" button is clicked)
+    if 'start_time' in st.session_state:
+        timer_logic(match_time)
 
 # Initialize session state
 if 'initialized' not in st.session_state:
