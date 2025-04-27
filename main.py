@@ -150,7 +150,6 @@ def delete_all_scores():
 def update_scores(current_scores, players, new_scores):
     for player in players:
         current_scores[player] = current_scores.get(player, 0) + new_scores.get(player, 0)
-    save_scores(current_scores)
     return current_scores
 
 def match_results(players):
@@ -159,8 +158,10 @@ def match_results(players):
     for player in players:
         score = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}")
         player_scores[player] = score
-    player_scores = update_scores(load_scores(), players, player_scores)
-    display_leaderboard(player_scores)
+    if st.button("Submit Scores"):
+        player_scores = update_scores(load_scores(), players, player_scores)
+        save_scores(player_scores)
+        display_leaderboard(player_scores)
 
 # Export helpers
 def generate_pdf(matches, rnd):
