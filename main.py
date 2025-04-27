@@ -17,14 +17,18 @@ st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 st.markdown(
     """
     <style>
-    /* Increase size for all standard text elements */
+    /* General text and inputs */
     .stMarkdown, .stTextInput, .stNumberInput, .stSelectbox, .stButton, .stRadio, .stTabs, .stCheckbox {
         font-size: 22px !important;
     }
-    
-    /* Headings (h1, h2, h3) */
+
+    /* Headings (h1, h2, h3) with background */
     h1, h2, h3, h4, h5, h6 {
         font-size: 30px !important;
+        background-color: #444444;
+        padding: 12px;
+        border-radius: 10px;
+        color: #FFFFFF;
     }
 
     /* Radio buttons (Match Type, Format etc.) */
@@ -75,6 +79,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
 DARK_MODE_STYLE = """
 <style>
 body { background-color: #1e1e1e; color: white; }
