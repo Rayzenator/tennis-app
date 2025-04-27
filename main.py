@@ -171,39 +171,36 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
+######################
 # Sidebar management
 def sidebar_management():
     with st.sidebar:
-        tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Leaderboard"])
-
-        with tab1:
+        # --- Courts Section ---
+        with st.expander("🎾 Manage Courts", expanded=True):
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
 
-            st.header("Manage Courts")  # Only one heading
-
-            selected_courts = st.multiselect(
-                "Select Courts to use",
-                options=st.session_state.courts,
-                default=st.session_state.courts
-            )
-            st.session_state.selected_courts = selected_courts
-
-            new_court = st.text_input("Add New Court", key="court_in")
+            new_court = st.text_input("➕ Add Court", key="court_input")
             add_court_col, reset_court_col = st.columns(2)
-            if add_court_col.button("Add Court") and new_court:
+            if add_court_col.button("Add", use_container_width=True) and new_court:
                 if new_court not in st.session_state.courts:
                     st.session_state.courts.append(new_court)
                     save_data()
                 else:
                     st.warning("Court already exists.")
-            if reset_court_col.button("Reset Courts"):
+            if reset_court_col.button("Reset", use_container_width=True):
                 st.session_state.courts = []
                 save_data()
 
-            st.subheader("Courts List")
-            from streamlit_sortables import sort_items
             if st.session_state.courts:
+                selected_courts = st.multiselect(
+                    "✅ Select Courts to Use",
+                    options=st.session_state.courts,
+                    default=st.session_state.courts,
+                    key="selected_courts"
+                )
+
+                from streamlit_sortables import sort_items
                 new_order = sort_items(st.session_state.courts, direction="vertical")
                 if new_order != st.session_state.courts:
                     st.session_state.courts = new_order
@@ -211,53 +208,52 @@ def sidebar_management():
 
                 for i, court in enumerate(st.session_state.courts):
                     c1, c2 = st.columns([8, 1])
-                    c1.write(court)
-                    if c2.button("❌", key=f"rm_court_{i}"):
+                    c1.caption(court)
+                    if c2.button("❌", key=f"remove_court_{i}"):
                         st.session_state.courts.pop(i)
                         save_data()
 
-        with tab2:
+        # --- Players Section ---
+        with st.expander("👥 Manage Players", expanded=True):
             if 'players' not in st.session_state:
                 st.session_state.players = []
 
-            st.header("Manage Players")  # Only one heading
-
-            selected_players = st.multiselect(
-                "Select Players to use",
-                options=st.session_state.players,
-                default=st.session_state.players
-            )
-            st.session_state.selected_players = selected_players
-
-            new_player = st.text_input("Add New Player", key="player_in")
+            new_player = st.text_input("➕ Add Player", key="player_input")
             add_player_col, reset_player_col = st.columns(2)
-            if add_player_col.button("Add Player") and new_player:
+            if add_player_col.button("Add", use_container_width=True) and new_player:
                 if new_player not in st.session_state.players:
                     st.session_state.players.append(new_player)
                     save_data()
                 else:
                     st.warning("Player already exists.")
-            if reset_player_col.button("Reset Players"):
+            if reset_player_col.button("Reset", use_container_width=True):
                 st.session_state.players = []
                 save_data()
 
-            st.subheader("Players List")
             if st.session_state.players:
+                selected_players = st.multiselect(
+                    "✅ Select Players to Use",
+                    options=st.session_state.players,
+                    default=st.session_state.players,
+                    key="selected_players"
+                )
+
                 for i, player in enumerate(st.session_state.players):
                     p1, p2 = st.columns([8, 1])
-                    p1.write(player)
-                    if p2.button("❌", key=f"rm_player_{i}"):
+                    p1.caption(player)
+                    if p2.button("❌", key=f"remove_player_{i}"):
                         st.session_state.players.pop(i)
                         save_data()
 
-        with tab3:
-            st.header("Leaderboard")  # Simple
+        # --- Leaderboard Section ---
+        with st.expander("🏆 Leaderboard", expanded=True):
             player_scores = load_scores()
             display_leaderboard(player_scores)
 
             if st.button("Delete All Player Scores"):
                 delete_all_scores()
 
+########################
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
     st.write("### Leaderboard")
