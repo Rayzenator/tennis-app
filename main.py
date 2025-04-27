@@ -76,8 +76,6 @@ def save_data():
 def sidebar_management():
     with st.sidebar:
         tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Leaderboard"])
-        
-        # Manage Courts
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
@@ -105,8 +103,6 @@ def sidebar_management():
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
-
-        # Manage Players
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
@@ -128,13 +124,11 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
-        # Leaderboard
         with tab3:
             player_scores = load_scores()
             display_leaderboard(player_scores)
-            if st.button("Reset All Scores"):
-                save_scores({})
 
+# Leaderboard Display
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
     st.write("### Leaderboard")
@@ -155,6 +149,22 @@ def match_results(players):
         player_scores[player] = score
     player_scores = update_scores(load_scores(), players, player_scores)
     display_leaderboard(player_scores)
+
+# Timer logic
+def timer_logic(match_time):
+    if 'start_time' not in st.session_state:
+        st.session_state.start_time = time.time()
+
+    elapsed_time = time.time() - st.session_state.start_time
+    remaining_time = match_time * 60 - elapsed_time
+
+    minutes, seconds = divmod(remaining_time, 60)
+    st.markdown(f"<div class='big-clock'>{int(minutes):02d}:{int(seconds):02d}</div>", unsafe_allow_html=True)
+
+    if remaining_time <= 0:
+        st.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
+        st.markdown(ALERT_SOUND, unsafe_allow_html=True)
+        st.success("Time's up!")
 
 def generate_pdf(matches, rnd):
     buf = BytesIO()
@@ -182,6 +192,7 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
+# Main match scheduling function
 def schedule_matches():
     if 'history' not in st.session_state:
         st.session_state.history = defaultdict(lambda: defaultdict(int))
@@ -196,7 +207,11 @@ def schedule_matches():
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
     leftover_opt = st.radio("Leftover Action", ["Rest", "Play American Doubles"])
-    match_time = st.number_input("Match Time (minutes)", 5, 60, 15) if format_opt == "Timed" else None
+    match_time = st.number_input("Match Time (minutes)", min_value=5, max_value=60, value=15)
+
+    start_timer_button = st.button("Start Timer")
+    if start_timer_button:
+        st.session_state.start_time = time.time()
 
     if st.button("Generate Next Round"):
         players = st.session_state.players.copy()
@@ -260,9 +275,6 @@ def schedule_matches():
         for court, pts in cr:
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
-        if format_opt == "Timed":
-            timer_logic(match_time)
-
         match_players = [player for _, group in cr for player in group if player != "Rest"]
         match_results(match_players)
 
@@ -283,35 +295,11 @@ def schedule_matches():
         st.session_state.round = 0
         st.session_state.recent_ad = set()
 
-def timer_logic(match_time):
-    if 'timer_running' not in st.session_state:
-        st.session_state.timer_running = False
-    if 'timer' not in st.session_state:
-        st.session_state.timer = 0
-    if 'start_time' not in st.session_state:
-        st.session_state.start_time = None
+if 'initialized' not in st.session_state:
+    d = load_data()
+    st.session_state.courts = d['courts']
+    st.session_state.players = d['players']
+    st.session_state.initialized = True
 
-    # Timer display
-    minutes, seconds = divmod(st.session_state.timer, 60)
-    st.markdown(f'<div class="big-clock">{minutes:02d}:{seconds:02d}</div>', unsafe_allow_html=True)
-
-    if st.session_state.timer_running:
-        # Timer logic for countdown
-        elapsed_time = time.time() - st.session_state.start_time
-        st.session_state.timer = int(elapsed_time)
-        if st.session_state.timer >= match_time * 60:
-            st.session_state.timer_running = False
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col1:
-        if st.button("Start Timer"):
-            st.session_state.start_time = time.time() - st.session_state.timer
-            st.session_state.timer_running = True
-    with col2:
-        if st.button("Pause Timer"):
-            st.session_state.timer_running = False
-    with col3:
-        if st.button("Reset Timer"):
-            st.session_state.timer = 0
-            st.session_state.timer_running = False
-            st.session_state.start_time = None
+sidebar_management()
+schedule_matches()
