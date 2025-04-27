@@ -166,6 +166,12 @@ sidebar_management()
 # Main page
 st.title("🎾 Tennis Scheduler")
 
+# Match format and type selection
+st.subheader("Match Format & Type")
+match_format = st.radio("Choose Match Format:", ["Singles", "Doubles"])
+match_type = st.radio("Choose Match Type:", ["Fast Four", "Timed"])
+leftovers = st.radio("Choose Leftovers Scheduling:", ["American Doubles", "Rest"])
+
 # Match scheduling logic
 def schedule_matches():
     players = st.session_state.players.copy()
@@ -229,7 +235,8 @@ if st.session_state.history:
 
     st.download_button("Download as PDF", generate_pdf(latest_round['matches'], latest_round['round']), file_name=f"tennis_schedule_round_{latest_round['round']}.pdf")
     st.download_button("Download as CSV", generate_csv(latest_round['matches']), file_name=f"tennis_schedule_round_{latest_round['round']}.csv")
-    
-    # Display Timer at the end
-    st.write("Match Timer")
-    st.write(f"Time Remaining: {st.session_state.timer_display}")
+
+    # Display Timer at the end (Big Clock)
+    st.write("### Match Timer")
+    st.write(f"**Time Remaining:**")
+    st.markdown(f"<h1 style='text-align: center; color: white;'>{st.session_state.timer_display}</h1>", unsafe_allow_html=True)
