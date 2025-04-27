@@ -346,11 +346,26 @@ def schedule_matches():
 
         matches = []
         random.shuffle(selected_players)
-        for court in selected_courts:
-            if len(selected_players) >= 4:  # For Doubles match
-                grp = selected_players[:4]
-                selected_players = selected_players[4:]
-                matches.append((court, grp))
+
+        # Correctly schedule singles or doubles based on the selected game type
+        if game_type == "Doubles":
+            for court in selected_courts:
+                if len(selected_players) >= 4:  # For Doubles match (need 4 players)
+                    grp = selected_players[:4]
+                    selected_players = selected_players[4:]
+                    matches.append((court, grp))
+                else:
+                    st.warning("Not enough players for doubles.")
+                    break
+        elif game_type == "Singles":
+            for court in selected_courts:
+                if len(selected_players) >= 2:  # For Singles match (need 2 players)
+                    grp = selected_players[:2]
+                    selected_players = selected_players[2:]
+                    matches.append((court, grp))
+                else:
+                    st.warning("Not enough players for singles.")
+                    break
 
         st.session_state.schedule.append(matches)
         st.session_state.round = len(st.session_state.schedule)
