@@ -271,7 +271,7 @@ def schedule_matches():
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
         if format_opt == "Timed":
-            st.info("Timed match: timer removed.")
+            st.info(f"Timed match: Set stopwatch to {minutes} minutes.")
         else:
             if st.button("Begin Fast Four"):
                 st.info("Fast Four match: first to 4 games wins.")
