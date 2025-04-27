@@ -251,6 +251,11 @@ def schedule_matches():
         r = st.session_state.round
         st.subheader(f"Round {r}")
         cr = st.session_state.schedule[r - 1]
+
+        # Display matchups before the scores table
+        st.write("### Matchups:")
+        for court, players in cr:
+            st.write(f"Court {court}: {' vs '.join(players)}")
         
         # Display all matches in a table for score entry
         scores = {}
