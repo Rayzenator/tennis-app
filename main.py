@@ -180,7 +180,7 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
-# Timer logic with Pause and Stop
+# Timer logic with Pause, Stop and Start Timer
 def timer_logic(match_time):
     if 'timer_running' not in st.session_state:
         st.session_state.timer_running = False
@@ -201,6 +201,9 @@ def timer_logic(match_time):
         st.session_state.timer_paused = False
         st.session_state.remaining_time = match_time * 60  # Reset the time to the initial value
 
+    def generate_next_round():
+        st.session_state.round += 1  # Logic to generate next round could go here
+
     # Timer display
     if st.session_state.timer_running and not st.session_state.timer_paused:
         total_time = st.session_state.remaining_time
@@ -214,10 +217,13 @@ def timer_logic(match_time):
         st.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
 
     with col2:
-        if st.session_state.timer_running and not st.session_state.timer_paused:
+        if not st.session_state.timer_running:
+            if st.button("Start Timer"):
+                start_timer()
+        elif st.session_state.timer_running and not st.session_state.timer_paused:
             if st.button("Pause Timer"):
                 pause_timer()
-        if st.session_state.timer_running:
+        elif st.session_state.timer_running:
             if st.button("Reset/Stop Timer"):
                 reset_timer()
 
@@ -229,6 +235,9 @@ def timer_logic(match_time):
             st.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
             st.markdown(ALERT_SOUND, unsafe_allow_html=True)
             st.success("Time's up!")
+
+    if st.button("Generate Next Round"):
+        generate_next_round()
 
 # Match scheduling
 def schedule_matches():
