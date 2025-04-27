@@ -45,6 +45,25 @@ ALERT_SOUND = """
 </script>
 """
 
+# Timer logic
+def timer_logic(match_time):
+    if 'start_time' not in st.session_state:
+        st.session_state.start_time = time.time()
+
+    elapsed_time = time.time() - st.session_state.start_time
+    remaining_time = match_time * 60 - elapsed_time
+
+    minutes, seconds = divmod(remaining_time, 60)
+    timer_display = f"{int(minutes):02d}:{int(seconds):02d}"
+    
+    # Display the timer on the page
+    st.markdown(f"<div class='big-clock'>{timer_display}</div>", unsafe_allow_html=True)
+
+    if remaining_time <= 0:
+        st.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
+        st.markdown(ALERT_SOUND, unsafe_allow_html=True)
+        st.success("Time's up!")
+
 # Data persistence
 DATA_FILE = "data.json"
 SCORES_FILE = 'scores.json'
@@ -76,6 +95,7 @@ def save_data():
 def sidebar_management():
     with st.sidebar:
         tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Leaderboard"])
+        
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
@@ -103,6 +123,7 @@ def sidebar_management():
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
+
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
@@ -125,72 +146,12 @@ def sidebar_management():
                 save_data()
 
         with tab3:
+            st.header("Leaderboard")
             player_scores = load_scores()
-            display_leaderboard(player_scores)
-
-# Leaderboard Display
-def display_leaderboard(player_scores):
-    sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
-    st.write("### Leaderboard")
-    for i, (player, score) in enumerate(sorted_scores, start=1):
-        st.write(f"{i}. {player}: {score} points")
-
-def update_scores(current_scores, players, new_scores):
-    for player in players:
-        current_scores[player] = current_scores.get(player, 0) + new_scores.get(player, 0)
-    save_scores(current_scores)
-    return current_scores
-
-def match_results(players):
-    st.write("### Enter Scores for Each Player")
-    player_scores = {}
-    for player in players:
-        score = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}")
-        player_scores[player] = score
-    player_scores = update_scores(load_scores(), players, player_scores)
-    display_leaderboard(player_scores)
-
-# Timer logic
-def timer_logic(match_time):
-    if 'start_time' not in st.session_state:
-        st.session_state.start_time = time.time()
-
-    elapsed_time = time.time() - st.session_state.start_time
-    remaining_time = match_time * 60 - elapsed_time
-
-    minutes, seconds = divmod(remaining_time, 60)
-    st.markdown(f"<div class='big-clock'>{int(minutes):02d}:{int(seconds):02d}</div>", unsafe_allow_html=True)
-
-    if remaining_time <= 0:
-        st.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
-        st.markdown(ALERT_SOUND, unsafe_allow_html=True)
-        st.success("Time's up!")
-
-def generate_pdf(matches, rnd):
-    buf = BytesIO()
-    c = canvas.Canvas(buf, pagesize=letter)
-    w, h = letter
-    y = h - 40
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, y, f"Tennis Schedule - Round {rnd}")
-    y -= 30
-    c.setFont("Helvetica", 12)
-    for court, pts in matches:
-        c.drawString(50, y, f"Court {court}: {' vs '.join(pts)}")
-        y -= 20
-        if y < 50:
-            c.showPage()
-            y = h - 40
-    c.save()
-    buf.seek(0)
-    return buf
-
-def generate_csv(matches):
-    df = pd.DataFrame([(c, ', '.join(players)) for c, players in matches], columns=["Court", "Players"])
-    buf = BytesIO()
-    df.to_csv(buf, index=False)
-    buf.seek(0)
-    return buf
+            sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
+            st.write("### Leaderboard")
+            for i, (player, score) in enumerate(sorted_scores, start=1):
+                st.write(f"{i}. {player}: {score} points")
 
 # Main match scheduling function
 def schedule_matches():
@@ -207,11 +168,19 @@ def schedule_matches():
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
     leftover_opt = st.radio("Leftover Action", ["Rest", "Play American Doubles"])
-    match_time = st.number_input("Match Time (minutes)", min_value=5, max_value=60, value=15)
+    
+    if format_opt == "Timed":
+        match_time = st.number_input("Match Time (minutes)", 5, 60, 15)
+    else:
+        st.info("Fast Four: first to 4 games wins.")
 
     start_timer_button = st.button("Start Timer")
     if start_timer_button:
         st.session_state.start_time = time.time()
+
+    # Timer display - call timer_logic in a loop to update the timer
+    if 'start_time' in st.session_state:
+        timer_logic(match_time)
 
     if st.button("Generate Next Round"):
         players = st.session_state.players.copy()
@@ -275,11 +244,21 @@ def schedule_matches():
         for court, pts in cr:
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
-        match_players = [player for _, group in cr for player in group if player != "Rest"]
-        match_results(match_players)
-
-        st.download_button("PDF", data=generate_pdf(cr, r), file_name=f"round_{r}.pdf")
-        st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
+        if format_opt == "Timed":
+            if st.button("Start Play"):
+                total = match_time * 60
+                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
+                pl = st.empty()
+                for t in range(total, 0, -1):
+                    m, s = divmod(t, 60)
+                    pl.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
+                    time.sleep(1)
+                pl.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
+                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
+                st.success("Time's up!")
+        else:
+            if st.button("Begin Fast Four"):
+                st.info("Fast Four match: first to 4 games wins.")
 
     c1, c2, c3 = st.columns(3)
     if c1.button("Previous Round") and st.session_state.round > 1:
@@ -295,6 +274,7 @@ def schedule_matches():
         st.session_state.round = 0
         st.session_state.recent_ad = set()
 
+# Initialize session state
 if 'initialized' not in st.session_state:
     d = load_data()
     st.session_state.courts = d['courts']
