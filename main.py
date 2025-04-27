@@ -233,8 +233,13 @@ def schedule_matches():
         for court, players in matches:
             st.markdown(f"**Court {court}:** {' vs '.join(players)}")
 
+        # Store the matches and round details in session state
+        st.session_state.generated_round = matches
+        st.session_state.round_details_shown = True
+
         # Now show the Start Play button
-        st.button("Start Play", key="start_play_button")
+        if st.session_state.round_details_shown:
+            st.button("Start Play", key="start_play_button")
 
     # Timer logic (triggered after "Start Play" button is clicked)
     if 'start_time' in st.session_state:
