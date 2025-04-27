@@ -289,8 +289,12 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
-# Define the schedule and history state if not already present
-def schedule_matches():
+# Initialize session state for players and courts if they don't exist
+def initialize_state():
+    if 'players' not in st.session_state:
+        st.session_state.players = ['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank']  # Example players
+    if 'courts' not in st.session_state:
+        st.session_state.courts = [1, 2, 3]  # Example courts
     if 'history' not in st.session_state:
         st.session_state.history = defaultdict(lambda: defaultdict(int))
     if 'schedule' not in st.session_state:
@@ -303,6 +307,11 @@ def schedule_matches():
     if 'player_scores' not in st.session_state:
         st.session_state.player_scores = {player: 0 for player in st.session_state.players}
 
+# Initialize the state when the app is loaded
+initialize_state()
+
+# Define the match scheduling function
+def schedule_matches():
     st.header("Schedule Matches")
 
     # Sidebar for Player and Court Selection
@@ -415,5 +424,6 @@ def schedule_matches():
         st.session_state.history = defaultdict(lambda: defaultdict(int))
         st.session_state.round = 0
 
+# Call the scheduling function
 sidebar_management()
 schedule_matches()
