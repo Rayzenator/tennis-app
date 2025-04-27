@@ -149,54 +149,11 @@ def update_timer():
     else:
         st.session_state.timer_display = "00:00"
 
-# App state initialization
-if 'initialized' not in st.session_state:
-    d = load_data()
-    st.session_state.courts = d['courts']
-    st.session_state.players = d['players']
-    st.session_state.initialized = True
-    st.session_state.round_number = 0
-    st.session_state.history = []
-    st.session_state.timer_display = "00:00"
-    st.session_state.timer_running = False
+# Display Timer in Big Clock format
+def display_big_clock():
+    st.markdown(f"<h1 style='text-align: center; color: white;'>{st.session_state.timer_display}</h1>", unsafe_allow_html=True)
 
-# Sidebar UI
-sidebar_management()
-
-# Main page
-st.title("🎾 Tennis Scheduler")
-
-# Match format and type selection
-st.subheader("Match Format & Type")
-match_format = st.radio("Choose Match Format:", ["Singles", "Doubles"])
-match_type = st.radio("Choose Match Type:", ["Fast Four", "Timed"])
-leftovers = st.radio("Choose Leftovers Scheduling:", ["American Doubles", "Rest"])
-
-# Match scheduling logic
-def schedule_matches():
-    players = st.session_state.players.copy()
-    courts = st.session_state.courts
-    if not players or not courts:
-        st.warning("Please add players and courts to schedule matches.")
-        return []
-
-    random.shuffle(players)
-    matches = []
-    court_assignments = min(len(players) // 2, len(courts))
-
-    for i in range(court_assignments):
-        p1 = players[2 * i]
-        p2 = players[2 * i + 1]
-        matches.append((courts[i], [p1, p2]))
-
-    return matches
-
-# Schedule new round
-if st.button("Schedule New Round"):
-    st.session_state.round_number += 1
-    matches = schedule_matches()
-    st.session_state.history.append({"round": st.session_state.round_number, "matches": matches})
-
+# In the main part of the app, after scheduling matches:
 if st.session_state.history:
     latest_round = st.session_state.history[-1]
     st.write(f"### Matches for Round {latest_round['round']}")
@@ -221,9 +178,8 @@ if st.session_state.history:
         st.session_state.timer_running = False
         st.session_state.timer_display = "00:00"
 
-    # Display Timer at the end (Big Clock)
-    st.write("### Match Timer")
-    st.markdown(f"<h1 style='text-align: center; color: white;'>{st.session_state.timer_display}</h1>", unsafe_allow_html=True)
+    # Display Big Timer Clock (should be in a large, centered format)
+    display_big_clock()
 
     # Score entry
     st.subheader("Enter Scores")
