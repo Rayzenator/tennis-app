@@ -76,6 +76,8 @@ def save_data():
 def sidebar_management():
     with st.sidebar:
         tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Leaderboard"])
+        
+        # Manage Courts
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
@@ -103,6 +105,8 @@ def sidebar_management():
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
+
+        # Manage Players
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
@@ -124,13 +128,12 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
+        # Leaderboard
         with tab3:
             player_scores = load_scores()
             display_leaderboard(player_scores)
-            if st.button("Delete All Scores"):
-                st.session_state.scores = {}
-                save_scores(st.session_state.scores)
-                st.success("All scores deleted.")
+            if st.button("Reset All Scores"):
+                save_scores({})
 
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
@@ -153,7 +156,6 @@ def match_results(players):
     player_scores = update_scores(load_scores(), players, player_scores)
     display_leaderboard(player_scores)
 
-# Export helpers
 def generate_pdf(matches, rnd):
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
@@ -180,66 +182,6 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
-# Timer logic with Pause, Stop, Start Timer, and Generate Next Round
-def timer_logic(match_time):
-    if 'timer_running' not in st.session_state:
-        st.session_state.timer_running = False
-    if 'timer_paused' not in st.session_state:
-        st.session_state.timer_paused = False
-    if 'remaining_time' not in st.session_state:
-        st.session_state.remaining_time = match_time * 60  # Set initial match time in seconds
-
-    def start_timer():
-        st.session_state.timer_running = True
-        st.session_state.timer_paused = False
-
-    def pause_timer():
-        st.session_state.timer_paused = True
-
-    def reset_timer():
-        st.session_state.timer_running = False
-        st.session_state.timer_paused = False
-        st.session_state.remaining_time = match_time * 60  # Reset the time to the initial value
-
-    def generate_next_round():
-        st.session_state.round += 1  # Logic to generate next round could go here
-
-    # Timer display
-    if st.session_state.timer_running and not st.session_state.timer_paused:
-        total_time = st.session_state.remaining_time
-    else:
-        total_time = match_time * 60  # Use the initial match time if paused or stopped
-
-    col1, col2 = st.columns([3, 1])
-
-    with col1:
-        m, s = divmod(total_time, 60)
-        st.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
-
-    with col2:
-        if not st.session_state.timer_running:
-            if st.button("Start Timer"):
-                start_timer()
-        elif st.session_state.timer_running and not st.session_state.timer_paused:
-            if st.button("Pause Timer"):
-                pause_timer()
-        elif st.session_state.timer_running:
-            if st.button("Reset/Stop Timer"):
-                reset_timer()
-
-    if st.session_state.timer_running and not st.session_state.timer_paused:
-        if st.session_state.remaining_time > 0:
-            st.session_state.remaining_time -= 1
-            time.sleep(1)
-        else:
-            st.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
-            st.markdown(ALERT_SOUND, unsafe_allow_html=True)
-            st.success("Time's up!")
-
-    if st.button("Generate Next Round"):
-        generate_next_round()
-
-# Match scheduling
 def schedule_matches():
     if 'history' not in st.session_state:
         st.session_state.history = defaultdict(lambda: defaultdict(int))
@@ -254,69 +196,62 @@ def schedule_matches():
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
     leftover_opt = st.radio("Leftover Action", ["Rest", "Play American Doubles"])
+    match_time = st.number_input("Match Time (minutes)", 5, 60, 15) if format_opt == "Timed" else None
 
-    if format_opt == "Timed":
-        match_time = st.number_input("Match Time (minutes)", 5, 60, 15, key="match_time")
-    else:
-        st.info("Fast Four: first to 4 games wins.")
+    if st.button("Generate Next Round"):
+        players = st.session_state.players.copy()
+        random.shuffle(players)
+        courts = st.session_state.courts.copy()
+        matches = []
+        used = set()
+        req = 4 if game_type == "Doubles" else 2
+        maxm = len(players) // req
+        if len(courts) < maxm:
+            st.warning("Not enough courts to schedule all matches.")
 
-    if st.button("Start Match"):
-        if format_opt == "Timed" and match_time < 5:
-            st.warning("Please select a match time of at least 5 minutes.")
-        else:
-            players = st.session_state.players.copy()
-            random.shuffle(players)
-            courts = st.session_state.courts.copy()
-            matches = []
-            used = set()
-            req = 4 if game_type == "Doubles" else 2
-            maxm = len(players) // req
-            if len(courts) < maxm:
-                st.warning("Not enough courts to schedule all matches.")
+        while courts and len(players) >= req:
+            grp = players[:req]
+            players = players[req:]
+            court = courts.pop(0)
+            matches.append((court, grp))
+            used.update(grp)
+            for i in range(len(grp)):
+                for j in range(i+1, len(grp)):
+                    st.session_state.history[grp[i]][grp[j]] += 1
+                    st.session_state.history[grp[j]][grp[i]] += 1
 
-            while courts and len(players) >= req:
-                grp = players[:req]
-                players = players[req:]
-                court = courts.pop(0)
-                matches.append((court, grp))
-                used.update(grp)
-                for i in range(len(grp)):
-                    for j in range(i+1, len(grp)):
-                        st.session_state.history[grp[i]][grp[j]] += 1
-                        st.session_state.history[grp[j]][grp[i]] += 1
-
-            leftovers = players
-            if leftovers:
-                if game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles":
-                    inserted = False
-                    for idx, (court, grp) in enumerate(matches):
-                        if len(grp) == 2:
-                            if not any(p in st.session_state.recent_ad for p in grp):
-                                new_grp = grp + leftovers
-                                matches[idx] = (court, new_grp)
-                                st.session_state.recent_ad = set(new_grp)
-                                inserted = True
-                                break
-                    if not inserted and courts:
-                        court = courts.pop(0)
-                        candidates = [p for p in used if p not in st.session_state.recent_ad]
-                        if len(candidates) < 2:
-                            candidates = list(used)
-                        picks = random.sample(candidates, 2)
-                        st.session_state.recent_ad = set(picks + leftovers)
-                        grp = leftovers + picks
-                        matches.append((court, grp))
-                    elif not inserted:
-                        matches.append(("Rest", leftovers))
-                elif courts:
+        leftovers = players
+        if leftovers:
+            if game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles":
+                inserted = False
+                for idx, (court, grp) in enumerate(matches):
+                    if len(grp) == 2:
+                        if not any(p in st.session_state.recent_ad for p in grp):
+                            new_grp = grp + leftovers
+                            matches[idx] = (court, new_grp)
+                            st.session_state.recent_ad = set(new_grp)
+                            inserted = True
+                            break
+                if not inserted and courts:
                     court = courts.pop(0)
-                    grp = leftovers
+                    candidates = [p for p in used if p not in st.session_state.recent_ad]
+                    if len(candidates) < 2:
+                        candidates = list(used)
+                    picks = random.sample(candidates, 2)
+                    st.session_state.recent_ad = set(picks + leftovers)
+                    grp = leftovers + picks
                     matches.append((court, grp))
-                else:
+                elif not inserted:
                     matches.append(("Rest", leftovers))
+            elif courts:
+                court = courts.pop(0)
+                grp = leftovers
+                matches.append((court, grp))
+            else:
+                matches.append(("Rest", leftovers))
 
-            st.session_state.schedule.append(matches)
-            st.session_state.round = len(st.session_state.schedule)
+        st.session_state.schedule.append(matches)
+        st.session_state.round = len(st.session_state.schedule)
 
     if st.session_state.schedule and st.session_state.round > 0:
         r = st.session_state.round
@@ -331,7 +266,7 @@ def schedule_matches():
         match_players = [player for _, group in cr for player in group if player != "Rest"]
         match_results(match_players)
 
-        st.download_button("PDF", data=generate_pdf(cr,r), file_name=f"round_{r}.pdf")
+        st.download_button("PDF", data=generate_pdf(cr, r), file_name=f"round_{r}.pdf")
         st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
 
     c1, c2, c3 = st.columns(3)
