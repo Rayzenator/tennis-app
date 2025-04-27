@@ -17,25 +17,38 @@ st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 st.markdown(
     """
     <style>
-    /* General body text */
-    .stMarkdown, .stTextInput, .stNumberInput, .stSelectbox, .stButton, .stRadio, .stTabs, .stCheckbox, .stTextArea, .stDataFrame {
-        font-size: 22px !important;
-        color: #DDDDDD !important; /* Softer light grey */
+    /* General body background and text */
+    body {
+        background-color: #FFFFFF; /* White background */
+        color: #000000; /* Black text */
     }
 
-    /* Headings with background and white text */
+    /* Sidebar */
+    .sidebar .sidebar-content {
+        background-color: #F8F9FA; /* Very light grey sidebar */
+        color: #000000;
+    }
+
+    /* Headings with soft background and glow */
     h1, h2, h3, h4, h5, h6 {
         font-size: 30px !important;
         background-color: #555555;
         padding: 12px;
         border-radius: 10px;
-        color: #FFFFFF !important; /* Pure white for headings */
+        color: #FFFFFF !important;
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.5); /* Soft glow */
+    }
+
+    /* Normal text, inputs, options */
+    .stMarkdown, .stTextInput, .stNumberInput, .stSelectbox, .stButton, .stRadio, .stTabs, .stCheckbox, .stTextArea, .stDataFrame {
+        font-size: 22px !important;
+        color: #000000 !important;
     }
 
     /* Radio buttons labels */
     div[role="radiogroup"] > label {
         font-size: 22px !important;
-        color: #DDDDDD !important;
+        color: #000000 !important;
     }
 
     /* Selectboxes and text inputs */
@@ -44,8 +57,9 @@ st.markdown(
         height: 50px !important;
         padding: 12px !important;
         border-radius: 10px !important;
-        color: #DDDDDD !important;
-        background-color: #333333 !important;
+        color: #000000 !important;
+        background-color: #FFFFFF !important;
+        border: 1px solid #CCC;
     }
 
     /* Buttons */
@@ -53,19 +67,16 @@ st.markdown(
         font-size: 24px !important;
         padding: 14px 24px !important;
         border-radius: 12px !important;
+        color: #FFFFFF !important;
+        background-color: #007BFF !important; /* Bootstrap blue */
+        border: none;
     }
 
     /* Match Info (Court matches text) */
     .element-container p {
         font-size: 24px !important;
         font-weight: bold;
-        color: #DDDDDD !important;
-    }
-
-    /* Sidebar content */
-    .sidebar .sidebar-content {
-        font-size: 22px !important;
-        color: #DDDDDD !important;
+        color: #000000 !important;
     }
 
     /* Timed match info box */
@@ -74,12 +85,14 @@ st.markdown(
         padding: 15px;
         border-radius: 10px;
         text-align: center;
+        background-color: #4CAF50;
+        color: #FFFFFF;
     }
 
     /* Tabs */
     .stTabs [data-baseweb="tab"] {
         font-size: 22px !important;
-        color: #DDDDDD !important;
+        color: #000000 !important;
     }
     </style>
     """,
