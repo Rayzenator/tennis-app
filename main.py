@@ -179,6 +179,13 @@ def main():
         st.header("Schedule Matches for Tonight")
         st.write("Select the players and courts for tonight's matches.")
 
+        # Initialize selected players and courts
+        if 'selected_players' not in st.session_state:
+            st.session_state.selected_players = []
+
+        if 'selected_courts' not in st.session_state:
+            st.session_state.selected_courts = []
+
         # Selector for courts
         st.session_state.selected_courts = st.multiselect(
             "Select Courts",
