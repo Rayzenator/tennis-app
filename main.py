@@ -174,15 +174,15 @@ def schedule_matches():
     else:
         st.info("Fast Four: first to 4 games wins.")
 
-    # Timer display - Call timer_logic only when the match is started
-    if 'start_time' in st.session_state:
-        timer_logic(match_time)
-
     # Display "Start Play" button only after round is generated
     if st.session_state.round > 0:
         start_play_button = st.button("Start Play", key="start_play_button")
         if start_play_button:
             st.session_state.start_time = time.time()  # Start timer when "Start Play" is clicked
+
+    # Timer display - Call timer_logic only when the match is started
+    if 'start_time' in st.session_state:
+        timer_logic(match_time)
 
     if st.button("Generate Next Round"):
         players = st.session_state.players.copy()
@@ -245,22 +245,6 @@ def schedule_matches():
         cr = st.session_state.schedule[r-1]
         for court, pts in cr:
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
-
-        if format_opt == "Timed":
-            if st.session_state.round > 0:
-                total = match_time * 60
-                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
-                pl = st.empty()
-                for t in range(total, 0, -1):
-                    m, s = divmod(t, 60)
-                    pl.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
-                    time.sleep(1)
-                pl.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
-                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
-                st.success("Time's up!")
-        else:
-            if st.button("Begin Fast Four"):
-                st.info("Fast Four match: first to 4 games wins.")
 
     c1, c2, c3 = st.columns(3)
     if c1.button("Previous Round") and st.session_state.round > 1:
