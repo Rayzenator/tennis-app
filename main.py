@@ -20,21 +20,22 @@ st.markdown(
     /* General text and inputs */
     .stMarkdown, .stTextInput, .stNumberInput, .stSelectbox, .stButton, .stRadio, .stTabs, .stCheckbox {
         font-size: 22px !important;
+        color: #FFFFFF !important;
     }
 
-    /* Headings (h1, h2, h3) with background */
+    /* Headings (h1, h2, h3) with background and white font */
     h1, h2, h3, h4, h5, h6 {
         font-size: 30px !important;
         background-color: #444444;
         padding: 12px;
         border-radius: 10px;
-        color: #FFFFFF;
+        color: #FFFFFF !important;
     }
 
     /* Radio buttons (Match Type, Format etc.) */
     div[role="radiogroup"] > label {
         font-size: 22px !important;
-        padding: 8px 0;
+        color: #FFFFFF !important;
     }
 
     /* Selectboxes and text inputs */
@@ -43,6 +44,8 @@ st.markdown(
         height: 50px !important;
         padding: 12px !important;
         border-radius: 10px !important;
+        color: #FFFFFF !important;
+        background-color: #333333 !important;
     }
 
     /* Buttons */
@@ -56,6 +59,7 @@ st.markdown(
     .element-container p {
         font-size: 24px !important;
         font-weight: bold;
+        color: #FFFFFF !important;
     }
 
     /* Sidebar */
@@ -74,6 +78,7 @@ st.markdown(
     /* Tabs text */
     .stTabs [data-baseweb="tab"] {
         font-size: 22px !important;
+        color: #FFFFFF !important;
     }
     </style>
     """,
