@@ -1,9 +1,9 @@
 import streamlit as st
 import random
 import time
-from collections import defaultdict
 import json
 import os
+from collections import defaultdict
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -168,7 +168,7 @@ def schedule_matches():
     else:
         st.info("Fast Four: first to 4 games wins.")
 
-    # Display the round and "Start Play" button only after round is generated
+    # Generate the round
     if st.button("Generate Next Round"):
         players = st.session_state.players.copy()
         random.shuffle(players)
@@ -224,16 +224,19 @@ def schedule_matches():
         st.session_state.schedule.append(matches)
         st.session_state.round = len(st.session_state.schedule)
 
-        # Store the matches and round details in session state
+        # Store the matches in session state
         st.session_state.generated_round = matches
-        st.session_state.round_details_shown = True
 
-        # Now show the Start Play button
-        if st.session_state.round_details_shown:
-            st.button("Start Play", key="start_play_button")
+    # Show the match schedule if it exists
+    if 'generated_round' in st.session_state:
+        st.subheader("Generated Round Matches")
+        for court, players in st.session_state.generated_round:
+            st.write(f"Court: {court} - Players: {', '.join(players)}")
 
-    # Timer logic (triggered after "Start Play" button is clicked)
-    if 'start_time' in st.session_state:
+    # Show the "Start Play" button after the round is generated
+    if 'generated_round' in st.session_state and st.button("Start Play"):
+        st.session_state.start_time = time.time()  # Start the timer when "Start Play" is clicked
+        st.success("Timer Started!")
         timer_logic(match_time)
 
 # Initialize session state
