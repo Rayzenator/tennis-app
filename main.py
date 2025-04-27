@@ -1,13 +1,13 @@
 import streamlit as st
 import random
 import time
-from collections import defaultdict
 import json
 import os
 import pandas as pd
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+import threading
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -19,51 +19,9 @@ body { background-color: #1e1e1e; color: white; }
 """
 st.markdown(DARK_MODE_STYLE, unsafe_allow_html=True)
 
-# Clock & alert styles
-CLOCK_STYLE = """
-<style>
-.big-clock {
-    font-size: 72px;
-    font-weight: bold;
-    color: #00FF00;
-    background-color: #000000;
-    padding: 20px;
-    text-align: center;
-    border-radius: 15px;
-}
-</style>
-"""
-ALERT_SOUND = """
-<audio id="beep" autoplay loop>
-  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
-  Your browser does not support the audio element.
-</audio>
-<script>
-  const sound = document.getElementById('beep');
-  sound.play();
-  setTimeout(() => { sound.pause(); sound.currentTime = 0; }, 10000);
-</script>
-"""
-
 # Data persistence
 DATA_FILE = "data.json"
-SCORES_FILE = 'scores.json'
-
-# Load or initialize scores data
-def load_scores():
-    if os.path.exists(SCORES_FILE):
-        with open(SCORES_FILE, 'r') as file:
-            return json.load(file)
-    else:
-        return {}
-
-def save_scores(scores):
-    with open(SCORES_FILE, 'w') as file:
-        json.dump(scores, file)
-
-def delete_all_scores():
-    if os.path.exists(SCORES_FILE):
-        os.remove(SCORES_FILE)
+SCORES_FILE = "scores.json"
 
 # Load player and court data
 def load_data():
@@ -77,13 +35,26 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
+# Load or initialize scores data
+def load_scores():
+    if os.path.exists(SCORES_FILE):
+        with open(SCORES_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_scores(scores):
+    with open(SCORES_FILE, 'w') as f:
+        json.dump(scores, f)
+
+def delete_all_scores():
+    if os.path.exists(SCORES_FILE):
+        os.remove(SCORES_FILE)
+
 # Sidebar management
 def sidebar_management():
     with st.sidebar:
         tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Settings"])
         with tab1:
-            if 'courts' not in st.session_state:
-                st.session_state.courts = []
             st.header("Courts")
             from streamlit_sortables import sort_items
             st.markdown("Drag to reorder:")
@@ -109,8 +80,6 @@ def sidebar_management():
                 st.session_state.courts = []
                 save_data()
         with tab2:
-            if 'players' not in st.session_state:
-                st.session_state.players = []
             st.header("Players")
             for i, player in enumerate(st.session_state.players):
                 p1, p2 = st.columns([8, 1])
@@ -135,40 +104,27 @@ def sidebar_management():
                 if st.button("Confirm Delete", key="confirm_delete"):
                     delete_all_scores()
                     st.success("All scores have been deleted.")
-        # 🔥 Add leaderboard at the bottom of sidebar
-        display_leaderboard(load_scores())
 
-# Display leaderboard in sidebar or right column
-def display_leaderboard(player_scores):
-    if not player_scores:
-        return
-    sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
-    with st.sidebar:
         st.markdown("---")
         st.markdown("### Leaderboard")
-        for i, (player, score) in enumerate(sorted_scores, start=1):
-            st.write(f"{i}. {player}: {score} points")
+        scores = load_scores()
+        if scores:
+            sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+            for i, (player, score) in enumerate(sorted_scores, 1):
+                st.write(f"{i}. {player}: {score} points")
 
-# Update leaderboard scores after each round
-def update_scores(current_scores, players, new_scores):
-    for player in players:
-        current_scores[player] = current_scores.get(player, 0) + new_scores.get(player, 0)
-    save_scores(current_scores)
-    return current_scores
-
-# Enter match scores and trigger leaderboard update
-def match_results(players):
-    st.write("### Enter Scores for Each Player")
-    round_scores = {}
-    for player in players:
-        score = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}_{time.time()}")
-        round_scores[player] = score
-    if st.button("Submit Scores"):
-        all_scores = load_scores()
-        updated_scores = update_scores(all_scores, players, round_scores)
-        st.success("Scores submitted and leaderboard updated.")
+# Timer management
+def start_timer(duration, session_key):
+    end_time = time.time() + duration * 60
+    while time.time() < end_time and session_key in st.session_state:
+        remaining_time = int(end_time - time.time())
+        minutes = remaining_time // 60
+        seconds = remaining_time % 60
+        st.session_state.timer_display = f"{minutes:02}:{seconds:02}"
         time.sleep(1)
-        st.experimental_rerun()
+        if not st.session_state.get(session_key, False):
+            break
+    st.session_state.timer_running = False
 
 # Export helpers
 def generate_pdf(matches, rnd):
@@ -203,27 +159,25 @@ if 'initialized' not in st.session_state:
     st.session_state.courts = d['courts']
     st.session_state.players = d['players']
     st.session_state.initialized = True
+    st.session_state.round_number = 0
+    st.session_state.history = []
+    st.session_state.timer_running = False
+    st.session_state.timer_display = "00:00"
 
 # Sidebar UI
 sidebar_management()
 
-# Main screen UI
-st.title("Tennis Match Scheduler 🎾")
-
-match_type = st.radio("Select Match Type", ["Singles", "Doubles", "American Doubles"], horizontal=True)
-game_format = st.radio("Select Game Format", ["Timed Matches", "Fast Four"], horizontal=True)
-time_per_match = st.number_input("Minutes per Match (for Timed Matches)", min_value=5, max_value=120, value=20)
-rounds = st.number_input("How many rounds to generate?", min_value=1, max_value=10, value=1)
+# Main page
+st.title("🎾 Tennis Scheduler")
 
 # Match scheduling logic
-def schedule_matches(match_type, game_format, time_per_match, rounds):
-    players = st.session_state.players
+def schedule_matches():
+    players = st.session_state.players.copy()
     courts = st.session_state.courts
     if not players or not courts:
         st.warning("Please add players and courts to schedule matches.")
-        return
+        return []
 
-    st.write("### Match Schedule")
     random.shuffle(players)
     matches = []
     court_assignments = min(len(players) // 2, len(courts))
@@ -233,21 +187,56 @@ def schedule_matches(match_type, game_format, time_per_match, rounds):
         p2 = players[2 * i + 1]
         matches.append((courts[i], [p1, p2]))
 
-    for court, match_players in matches:
-        st.write(f"**Court {court}:** {match_players[0]} vs {match_players[1]}")
+    return matches
 
-    st.info(f"**Format:** {game_format} | **Match Duration:** {time_per_match} minutes")
+def enter_scores(players):
+    st.subheader("Enter Scores")
+    scores = {}
+    for player in players:
+        scores[player] = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}_{time.time()}")
+    if st.button("Submit Scores"):
+        all_scores = load_scores()
+        for player, pts in scores.items():
+            all_scores[player] = all_scores.get(player, 0) + pts
+        save_scores(all_scores)
+        st.success("Scores updated!")
+        time.sleep(1)
+        st.experimental_rerun()
 
-    match_players = [p for _, match in matches for p in match]
-    match_results(match_players)
+st.markdown(f"## Round {st.session_state.round_number}")
 
-    st.download_button("Download as PDF", generate_pdf(matches, rounds), file_name="tennis_schedule.pdf")
-    st.download_button("Download as CSV", generate_csv(matches), file_name="tennis_schedule.csv")
+if st.button("Schedule New Round"):
+    st.session_state.round_number += 1
+    matches = schedule_matches()
+    st.session_state.history.append({"round": st.session_state.round_number, "matches": matches})
 
-# Button to trigger scheduling
-if st.button("Generate Schedule"):
-    schedule_matches(match_type, game_format, time_per_match, rounds)
+if st.session_state.history:
+    latest_round = st.session_state.history[-1]
+    st.write(f"### Matches for Round {latest_round['round']}")
+    players_in_round = []
+    for court, players in latest_round['matches']:
+        st.write(f"**Court {court}:** {players[0]} vs {players[1]}")
+        players_in_round.extend(players)
 
-# Display match scheduling UI and leaderboard
-schedule_matches()
-display_leaderboard(load_scores())
+    enter_scores(players_in_round)
+
+    st.download_button("Download as PDF", generate_pdf(latest_round['matches'], latest_round['round']), file_name=f"tennis_schedule_round_{latest_round['round']}.pdf")
+    st.download_button("Download as CSV", generate_csv(latest_round['matches']), file_name=f"tennis_schedule_round_{latest_round['round']}.csv")
+
+# Timer Display
+st.subheader("Match Timer")
+st.write("Match Duration: 30 minutes")
+st.write(f"Time Remaining: {st.session_state.timer_display}")
+
+if not st.session_state.timer_running:
+    if st.button("Start Timer"):
+        st.session_state.timer_running = True
+        threading.Thread(target=start_timer, args=(30, "timer_running")).start()
+
+if st.session_state.timer_running:
+    if st.button("Pause Timer"):
+        st.session_state.timer_running = False
+
+if st.session_state.timer_running is False and st.button("Stop Timer"):
+    st.session_state.timer_display = "00:00"
+    st.session_state.timer_running = False
