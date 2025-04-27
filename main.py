@@ -271,17 +271,7 @@ def schedule_matches():
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
         if format_opt == "Timed":
-            if st.button("Start Play"):
-                total = match_time * 60
-                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
-                pl = st.empty()
-                for t in range(total,0,-1):
-                    m,s=divmod(t,60)
-                    pl.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
-                    time.sleep(1)
-                pl.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
-                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
-                st.success("Time's up!")
+            st.info("Timed match: timer removed.")
         else:
             if st.button("Begin Fast Four"):
                 st.info("Fast Four match: first to 4 games wins.")
