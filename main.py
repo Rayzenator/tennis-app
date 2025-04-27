@@ -17,47 +17,64 @@ st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 st.markdown(
     """
     <style>
-    /* Only increase text size safely */
-    .stMarkdown, .stTextInput, .stNumberInput, .stSelectbox, .stButton, .stRadio, .stTabs {
+    /* Increase size for all standard text elements */
+    .stMarkdown, .stTextInput, .stNumberInput, .stSelectbox, .stButton, .stRadio, .stTabs, .stCheckbox {
         font-size: 22px !important;
     }
     
+    /* Headings (h1, h2, h3) */
     h1, h2, h3, h4, h5, h6 {
-        font-size: 28px !important;
+        font-size: 30px !important;
     }
 
-    /* Button styling */
+    /* Radio buttons (Match Type, Format etc.) */
+    div[role="radiogroup"] > label {
+        font-size: 22px !important;
+        padding: 8px 0;
+    }
+
+    /* Selectboxes and text inputs */
+    select, input[type="text"], input[type="number"] {
+        font-size: 22px !important;
+        height: 50px !important;
+        padding: 12px !important;
+        border-radius: 10px !important;
+    }
+
+    /* Buttons */
     .stButton>button {
         font-size: 24px !important;
         padding: 14px 24px !important;
         border-radius: 12px !important;
     }
 
-    /* Input fields styling */
-    input[type="text"], input[type="number"] {
-        font-size: 22px !important;
-        padding: 12px !important;
-        height: 50px !important;
-        border-radius: 8px;
+    /* Match Info (Court match text) */
+    .element-container p {
+        font-size: 24px !important;
+        font-weight: bold;
     }
 
-    /* Timed info box */
+    /* Sidebar */
+    .sidebar .sidebar-content {
+        font-size: 22px !important;
+    }
+
+    /* Timed match info box */
     .timed-info {
         font-size: 26px !important;
         padding: 15px;
         border-radius: 10px;
         text-align: center;
     }
-    
-    /* Sidebar */
-    .sidebar .sidebar-content {
+
+    /* Tabs text */
+    .stTabs [data-baseweb="tab"] {
         font-size: 22px !important;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
-
 DARK_MODE_STYLE = """
 <style>
 body { background-color: #1e1e1e; color: white; }
