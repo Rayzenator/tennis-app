@@ -174,13 +174,14 @@ def schedule_matches():
     else:
         st.info("Fast Four: first to 4 games wins.")
 
-    start_timer_button = st.button("Start Timer")
-    if start_timer_button:
-        st.session_state.start_time = time.time()
-
-    # Timer display - call timer_logic in a loop to update the timer
+    # Timer display - Call timer_logic only when the match is started
     if 'start_time' in st.session_state:
         timer_logic(match_time)
+
+    # Single Start Play button for both match and timer
+    start_play_button = st.button("Start Play")
+    if start_play_button:
+        st.session_state.start_time = time.time()  # Start timer when "Start Play" is clicked
 
     if st.button("Generate Next Round"):
         players = st.session_state.players.copy()
