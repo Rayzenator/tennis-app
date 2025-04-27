@@ -1,144 +1,30 @@
 import streamlit as st
-import random
-import time
-from collections import defaultdict
-import json
-import os
-import pandas as pd
-from io import BytesIO
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+from fpdf import FPDF  # We will use this for exporting to PDF
 
+# Helper to create PDF of the schedule
+def export_to_pdf(rounds):
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    
+    # Title
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, "Tennis Match Schedule", ln=True, align="C")
+    pdf.ln(10)
 
-# -----------------
-# Sidebar Settings
-# -----------------
+    # Adding rounds to the PDF
+    pdf.set_font("Arial", size=12)
+    for round_num, court_matches in rounds:
+        pdf.cell(200, 10, f"Round {round_num}", ln=True)
+        for court, players in court_matches:
+            players_str = ", ".join(players)
+            pdf.cell(200, 10, f"**{court}**: {players_str}", ln=True)
+        pdf.ln(5)
 
-with st.sidebar:
-    st.header("Settings")
-
-    match_type = st.selectbox(
-        "Match Type",
-        ["Singles", "Doubles", "American Doubles", "Rest"],
-        key="match_type"
-    )
-
-    scoring_type = st.selectbox(
-        "Scoring Type",
-        ["Timed", "Fast Four"],
-        key="scoring_type"
-    )
-
-# -----------------
-# Helper Functions
-# -----------------
-
-def reset_players():
-    st.session_state.players = []
-    st.session_state.selected_players = []
-
-def reset_courts():
-    st.session_state.courts = []
-    st.session_state.selected_courts = []
-
-def add_player(name):
-    if "players" not in st.session_state:
-        st.session_state.players = []
-    if name and name not in st.session_state.players:
-        st.session_state.players.append(name)
-
-def add_court(name):
-    if "courts" not in st.session_state:
-        st.session_state.courts = []
-    if name and name not in st.session_state.courts:
-        st.session_state.courts.append(name)
-
-def schedule_matches(players, courts, match_type):
-    matches = []
-    players = players.copy()
-    random.shuffle(players)
-
-    if match_type == "Singles":
-        group_size = 2
-    elif match_type == "Doubles":
-        group_size = 4
-    elif match_type == "American Doubles":
-        group_size = 3
-    else:
-        group_size = 0  # For Rest
-
-    if group_size > 0:
-        for i in range(0, len(players), group_size):
-            group = players[i:i+group_size]
-            if len(group) == group_size:
-                matches.append(group)
-    else:
-        matches = [[player] for player in players]
-
-    court_assignments = []
-    for idx, match in enumerate(matches):
-        court = courts[idx % len(courts)]
-        court_assignments.append((court, match))
-
-    return court_assignments
-
-# -----------------
-# Tabs
-# -----------------
-
-tab1, tab2, tab3 = st.tabs(["Players", "Courts", "Schedule"])
-
-# -----------------
-# Players Tab
-# -----------------
-with tab1:
-    st.header("Manage Players")
-
-    if "players" not in st.session_state:
-        st.session_state.players = []
-
-    if "selected_players" not in st.session_state:
-        st.session_state.selected_players = []
-
-    new_player = st.text_input("Add Player")
-    if st.button("Add Player"):
-        add_player(new_player)
-
-    st.button("Reset Players", on_click=reset_players)
-
-    if st.session_state.players:
-        st.subheader("Select Players for Tonight")
-        st.session_state.selected_players = st.multiselect(
-            "Players",
-            st.session_state.players,
-            default=st.session_state.players
-        )
-
-# -----------------
-# Courts Tab
-# -----------------
-with tab2:
-    st.header("Manage Courts")
-
-    if "courts" not in st.session_state:
-        st.session_state.courts = []
-
-    if "selected_courts" not in st.session_state:
-        st.session_state.selected_courts = []
-
-    new_court = st.text_input("Add Court")
-    if st.button("Add Court"):
-        add_court(new_court)
-
-    st.button("Reset Courts", on_click=reset_courts)
-
-    if st.session_state.courts:
-        st.subheader("Select Courts for Tonight")
-        st.session_state.selected_courts = st.multiselect(
-            "Courts",
-            st.session_state.courts,
-            default=st.session_state.courts
-        )
+    # Save file
+    pdf_output = "/mnt/data/tennis_schedule.pdf"
+    pdf.output(pdf_output)
+    return pdf_output
 
 # -----------------
 # Schedule Tab
@@ -151,17 +37,40 @@ with tab3:
     elif "selected_courts" not in st.session_state or not st.session_state.selected_courts:
         st.warning("Please select courts first.")
     else:
-        court_matches = schedule_matches(
-            st.session_state.selected_players,
-            st.session_state.selected_courts,
-            st.session_state.match_type
-        )
+        if "rounds" not in st.session_state:
+            st.session_state.rounds = []
+            st.session_state.round_number = 1
+            st.session_state.match_time = 20  # Default estimated time per round in minutes
 
-        if st.session_state.match_type != "Rest":
-            for court, players in court_matches:
-                players_str = ", ".join(players)
-                st.write(f"**{court}** - {st.session_state.match_type} ({st.session_state.scoring_type}): {players_str}")
-        else:
-            st.subheader("Players Resting")
-            for player in st.session_state.selected_players:
-                st.write(player)
+        # Set up the input for match time per round
+        st.sidebar.number_input("Estimated time per round (minutes):", 
+            min_value=10, max_value=60, value=st.session_state.match_time)
+
+        if st.button("Generate Round"):
+            matches = schedule_matches(
+                st.session_state.selected_players,
+                st.session_state.selected_courts,
+                st.session_state.match_type
+            )
+            st.session_state.rounds.append((st.session_state.round_number, matches))
+            st.session_state.round_number += 1
+
+        # Display rounds
+        if st.session_state.rounds:
+            for round_num, court_matches in st.session_state.rounds:
+                st.subheader(f"Round {round_num} (Estimated time: {st.session_state.match_time} mins)")
+                if st.session_state.match_type != "Rest":
+                    for i, (court, players) in enumerate(court_matches):
+                        court_name = f"Court {i + 1}"
+                        players_str = ", ".join(players)
+                        st.write(f"**{court_name}** - {st.session_state.match_type} ({st.session_state.scoring_type}): {players_str}")
+                else:
+                    st.subheader("Players Resting")
+                    for player in st.session_state.selected_players:
+                        st.write(player)
+
+        # Export button for the entire schedule
+        if st.button("Export Schedule to PDF"):
+            pdf_path = export_to_pdf(st.session_state.rounds)
+            st.success(f"Schedule exported! You can download it here: [Download PDF](sandbox:{pdf_path})")
+
