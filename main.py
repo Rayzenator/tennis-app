@@ -60,9 +60,9 @@ def save_data():
 # Sidebar management
 def sidebar_management():
     with st.sidebar:
-        tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Leaderboard"])
+        tab1, tab2, tab3 = st.tabs(["Courts", "Players", "Leaderboard"])  # Simplified tab names
         
-        # Tab 1 - Manage Courts
+        # Tab 1 - Courts
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = load_data().get("courts", [])
@@ -85,7 +85,7 @@ def sidebar_management():
                     st.session_state.courts.pop(i)
                     save_data()
 
-        # Tab 2 - Manage Players
+        # Tab 2 - Players
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = load_data().get("players", [])
