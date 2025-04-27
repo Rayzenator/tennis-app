@@ -43,18 +43,20 @@ ALERT_SOUND = """
 
 # Timer logic
 def timer_logic(match_time):
+    # Ensure we have a start time and elapsed time in session state
     if 'start_time' in st.session_state:
         elapsed_time = time.time() - st.session_state.start_time
         remaining_time = match_time * 60 - elapsed_time
         minutes, seconds = divmod(remaining_time, 60)
         timer_display = f"{int(minutes):02d}:{int(seconds):02d}"
 
-        # Update the session state with the new time
+        # Update session state with the new timer value
         st.session_state.timer_display = timer_display
         
         # Display the timer on the page
         st.markdown(f"<div class='big-clock'>{st.session_state.timer_display}</div>", unsafe_allow_html=True)
 
+        # If time is up, show an alert
         if remaining_time <= 0:
             st.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
             st.markdown(ALERT_SOUND, unsafe_allow_html=True)
