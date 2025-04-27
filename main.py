@@ -89,7 +89,7 @@ def sidebar_management():
 
 # Scheduling matches based on selected players and courts
 def schedule_matches():
-    # Initialize selected players and courts
+    # Initialize selected players and courts if not present
     if 'selected_players' not in st.session_state:
         st.session_state.selected_players = []
 
