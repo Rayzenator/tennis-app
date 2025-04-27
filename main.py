@@ -251,7 +251,6 @@ def sidebar_management():
             if st.button("Delete All Player Scores"):
                 delete_all_scores()
 
-
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
     st.write("### Leaderboard")
