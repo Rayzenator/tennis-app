@@ -180,7 +180,7 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
-# Timer logic with Pause, Stop and Start Timer
+# Timer logic with Pause, Stop, Start Timer, and Generate Next Round
 def timer_logic(match_time):
     if 'timer_running' not in st.session_state:
         st.session_state.timer_running = False
