@@ -2,10 +2,6 @@ import streamlit as st
 import random
 import json
 import os
-import pandas as pd
-from io import BytesIO
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from collections import defaultdict
 
 # Page configuration and dark mode styling
