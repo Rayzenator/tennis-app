@@ -289,6 +289,7 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
+# Define the schedule and history state if not already present
 def schedule_matches():
     if 'history' not in st.session_state:
         st.session_state.history = defaultdict(lambda: defaultdict(int))
@@ -299,15 +300,14 @@ def schedule_matches():
     if 'recent_ad' not in st.session_state:
         st.session_state.recent_ad = set()
 
-    # Initialize player scores if not already initialized
     if 'player_scores' not in st.session_state:
         st.session_state.player_scores = {player: 0 for player in st.session_state.players}
 
     st.header("Schedule Matches")
+
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
-    
-    # Use checkboxes for Rest and Play American Doubles options
+
     leftover_opt = st.checkbox("Leftover Action (Rest or Play American Doubles)", value=False)
     
     if format_opt == "Timed":
@@ -315,70 +315,53 @@ def schedule_matches():
     else:
         st.info("Fast Four: first to 4 games wins.")
 
+    # Display checkboxes for players and courts
+    st.subheader("Select Players and Courts")
+
+    available_players = st.session_state.players
+    available_courts = st.session_state.courts
+    
+    selected_players = []
+    selected_courts = []
+
+    # Display checkboxes for players
+    st.write("Select players for the match:")
+    for player in available_players:
+        if st.checkbox(f"Select {player}", key=player):
+            selected_players.append(player)
+    
+    # Display checkboxes for courts
+    st.write("Select courts for the match:")
+    for court in available_courts:
+        if st.checkbox(f"Select Court {court}", key=f"court_{court}"):
+            selected_courts.append(court)
+
     if st.button("Generate Next Round"):
+        if not selected_players or not selected_courts:
+            st.warning("Please select at least one player and one court.")
+            return
+
         # Reset player scores to zero for the new round
-        st.session_state.player_scores = {player: 0 for player in st.session_state.players}
+        st.session_state.player_scores = {player: 0 for player in selected_players}
 
-        players = st.session_state.players.copy()
-        random.shuffle(players)
-        courts = st.session_state.courts.copy()
         matches = []
-        used = set()
-        req = 4 if game_type == "Doubles" else 2
-        maxm = len(players) // req
-        if len(courts) < maxm:
-            st.warning("Not enough courts to schedule all matches.")
-
-        while courts and len(players) >= req:
-            grp = players[:req]
-            players = players[req:]
-            court = courts.pop(0)
-            matches.append((court, grp))
-            used.update(grp)
-            for i in range(len(grp)):
-                for j in range(i+1, len(grp)):
-                    st.session_state.history[grp[i]][grp[j]] += 1
-                    st.session_state.history[grp[j]][grp[i]] += 1
-
-        leftovers = players
-        if leftovers:
-            if game_type == "Singles" and len(leftovers) == 1 and leftover_opt:
-                inserted = False
-                for idx, (court, grp) in enumerate(matches):
-                    if len(grp) == 2:
-                        if not any(p in st.session_state.recent_ad for p in grp):
-                            new_grp = grp + leftovers
-                            matches[idx] = (court, new_grp)
-                            st.session_state.recent_ad = set(new_grp)
-                            inserted = True
-                            break
-                if not inserted and courts:
-                    court = courts.pop(0)
-                    candidates = [p for p in used if p not in st.session_state.recent_ad]
-                    if len(candidates) < 2:
-                        candidates = list(used)
-                    picks = random.sample(candidates, 2)
-                    st.session_state.recent_ad = set(picks + leftovers)
-                    grp = leftovers + picks
-                    matches.append((court, grp))
-                elif not inserted:
-                    matches.append(("Rest", leftovers))
-            elif courts:
-                court = courts.pop(0)
-                grp = leftovers
+        random.shuffle(selected_players)
+        for court in selected_courts:
+            if len(selected_players) >= 4:  # For Doubles match
+                grp = selected_players[:4]
+                selected_players = selected_players[4:]
                 matches.append((court, grp))
-            else:
-                matches.append(("Rest", leftovers))
 
         st.session_state.schedule.append(matches)
         st.session_state.round = len(st.session_state.schedule)
 
+    # Show scheduled matches
     if st.session_state.schedule and st.session_state.round > 0:
         r = st.session_state.round
         st.subheader(f"Round {r}")
         cr = st.session_state.schedule[r-1]
-        for court, pts in cr:
-            st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
+        for court, grp in cr:
+            st.markdown(f"**Court {court}:** {' vs '.join(grp)}")
 
         if format_opt == "Timed":
             st.markdown(
@@ -400,9 +383,6 @@ def schedule_matches():
         else:
             if st.button("Begin Fast Four"):
                 st.info("Fast Four match: first to 4 games wins.")
-
-        match_players = [player for _, group in cr for player in group if player != "Rest"]
-        match_results(match_players)
 
         st.download_button("PDF", data=generate_pdf(cr,r), file_name=f"round_{r}.pdf")
         st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
