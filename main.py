@@ -112,34 +112,7 @@ def sidebar_management():
             for i, (player, score) in enumerate(sorted_scores, 1):
                 st.write(f"{i}. {player}: {score} points")
 
-# Export helpers
-def generate_pdf(matches, rnd):
-    buf = BytesIO()
-    c = canvas.Canvas(buf, pagesize=letter)
-    w, h = letter
-    y = h - 40
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, y, f"Tennis Schedule - Round {rnd}")
-    y -= 30
-    c.setFont("Helvetica", 12)
-    for court, pts in matches:
-        c.drawString(50, y, f"Court {court}: {' vs '.join(pts)}")
-        y -= 20
-        if y < 50:
-            c.showPage()
-            y = h - 40
-    c.save()
-    buf.seek(0)
-    return buf
-
-def generate_csv(matches):
-    df = pd.DataFrame([(c, ', '.join(players)) for c, players in matches], columns=["Court", "Players"])
-    buf = BytesIO()
-    df.to_csv(buf, index=False)
-    buf.seek(0)
-    return buf
-
-# Timer management (simplified)
+# Timer functions
 def update_timer():
     if 'start_time' in st.session_state:
         elapsed_time = time.time() - st.session_state.start_time
@@ -149,28 +122,8 @@ def update_timer():
     else:
         st.session_state.timer_display = "00:00"
 
-# App state initialization
-if 'initialized' not in st.session_state:
-    d = load_data()
-    st.session_state.courts = d['courts']
-    st.session_state.players = d['players']
-    st.session_state.initialized = True
-    st.session_state.round_number = 0
-    st.session_state.history = []
-    st.session_state.timer_display = "00:00"
-    st.session_state.timer_running = False
-
-# Sidebar UI
-sidebar_management()
-
-# Main page
-st.title("🎾 Tennis Scheduler")
-
-# Match format and type selection
-st.subheader("Match Format & Type")
-match_format = st.radio("Choose Match Format:", ["Singles", "Doubles"])
-match_type = st.radio("Choose Match Type:", ["Fast Four", "Timed"])
-leftovers = st.radio("Choose Leftovers Scheduling:", ["American Doubles", "Rest"])
+def display_big_clock():
+    st.markdown(f"<h1 style='text-align: center; color: white;'>{st.session_state.timer_display}</h1>", unsafe_allow_html=True)
 
 # Match scheduling logic
 def schedule_matches():
@@ -191,7 +144,24 @@ def schedule_matches():
 
     return matches
 
-# Schedule new round
+# App state initialization
+if 'initialized' not in st.session_state:
+    d = load_data()
+    st.session_state.courts = d['courts']
+    st.session_state.players = d['players']
+    st.session_state.initialized = True
+    st.session_state.round_number = 0
+    st.session_state.history = []
+    st.session_state.timer_display = "00:00"
+    st.session_state.timer_running = False
+
+# Sidebar UI
+sidebar_management()
+
+# Main page
+st.title("🎾 Tennis Scheduler")
+
+# Match scheduling
 if st.button("Schedule New Round"):
     st.session_state.round_number += 1
     matches = schedule_matches()
@@ -205,7 +175,7 @@ if st.session_state.history:
         st.write(f"**Court {court}:** {players[0]} vs {players[1]}")
         players_in_round.extend(players)
 
-    # Timer controls
+    # Timer control section
     st.subheader("Match Timer Controls")
     if st.session_state.timer_running:
         if st.button("Pause Timer"):
@@ -221,9 +191,8 @@ if st.session_state.history:
         st.session_state.timer_running = False
         st.session_state.timer_display = "00:00"
 
-    # Display Timer at the end (Big Clock)
-    st.write("### Match Timer")
-    st.markdown(f"<h1 style='text-align: center; color: white;'>{st.session_state.timer_display}</h1>", unsafe_allow_html=True)
+    # Display Big Timer Clock
+    display_big_clock()
 
     # Score entry
     st.subheader("Enter Scores")
@@ -241,4 +210,3 @@ if st.session_state.history:
 
     st.download_button("Download as PDF", generate_pdf(latest_round['matches'], latest_round['round']), file_name=f"tennis_schedule_round_{latest_round['round']}.pdf")
     st.download_button("Download as CSV", generate_csv(latest_round['matches']), file_name=f"tennis_schedule_round_{latest_round['round']}.csv")
-
