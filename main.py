@@ -30,7 +30,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Data persistence
+# Data persistence file paths
 DATA_FILE = "data.json"
 SCORES_FILE = 'scores.json'
 
@@ -65,7 +65,7 @@ def sidebar_management():
         # Tab 1 - Manage Courts
         with tab1:
             if 'courts' not in st.session_state:
-                st.session_state.courts = []
+                st.session_state.courts = load_data().get("courts", [])
             st.header("Courts")
             new_court = st.text_input("Add Court", key="court_in")
             if st.button("Add Court") and new_court:
@@ -88,7 +88,7 @@ def sidebar_management():
         # Tab 2 - Manage Players
         with tab2:
             if 'players' not in st.session_state:
-                st.session_state.players = []
+                st.session_state.players = load_data().get("players", [])
             st.header("Players")
             new_player = st.text_input("Add Player", key="player_in")
             if st.button("Add Player") and new_player:
