@@ -4,10 +4,6 @@ import time
 from collections import defaultdict
 import json
 import os
-import pandas as pd
-from io import BytesIO
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -227,11 +223,6 @@ def schedule_matches():
 
         st.session_state.schedule.append(matches)
         st.session_state.round = len(st.session_state.schedule)
-
-        # Display the round details
-        st.subheader(f"Round {st.session_state.round}")
-        for court, players in matches:
-            st.markdown(f"**Court {court}:** {' vs '.join(players)}")
 
         # Store the matches and round details in session state
         st.session_state.generated_round = matches
