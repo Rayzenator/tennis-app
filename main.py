@@ -9,6 +9,44 @@ from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
+st.markdown(
+    """
+    <style>
+    html, body, [class*="css"] {
+        font-size: 22px !important;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-size: 28px !important;
+    }
+    .stButton button {
+        font-size: 24px !important;
+        padding: 12px 24px !important;
+        border-radius: 12px !important;
+    }
+    .stRadio label, .stNumberInput input, .stSelectbox label, .stTextInput input {
+        font-size: 22px !important;
+        padding: 10px 12px !important;
+    }
+    .stNumberInput input {
+        height: 50px !important;
+    }
+    .stTextInput input {
+        height: 50px !important;
+    }
+    .timed-info {
+        font-size: 26px !important;
+        padding: 15px;
+        border-radius: 10px;
+    }
+    .stTabs [role="tab"] {
+        font-size: 22px !important;
+        padding: 12px 16px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 DARK_MODE_STYLE = """
