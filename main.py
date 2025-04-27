@@ -25,28 +25,40 @@ st.markdown(
 
     /* Sidebar */
     .sidebar .sidebar-content {
-        background-color: #F8F9FA; /* Very light grey sidebar */
+        background-color: #F8F9FA;
         color: #000000;
     }
 
-    /* Headings with soft background and glow */
+    /* Headings */
     h1, h2, h3, h4, h5, h6 {
         font-size: 30px !important;
         background-color: #555555;
         padding: 12px;
         border-radius: 10px;
         color: #FFFFFF !important;
-        text-shadow: 2px 2px 5px rgba(0,0,0,0.5); /* Soft glow */
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
     }
 
-    /* Normal text, inputs, options */
+    /* Normal text and components */
     .stMarkdown, .stTextInput, .stNumberInput, .stSelectbox, .stButton, .stRadio, .stTabs, .stCheckbox, .stTextArea, .stDataFrame {
         font-size: 22px !important;
         color: #000000 !important;
     }
 
-    /* Radio buttons labels */
-    div[role="radiogroup"] > label {
+    /* Radio button group label (Match Type, Format, Leftover Action) */
+    label[data-baseweb="radio"] {
+        font-size: 24px !important;
+        background-color: #FFEB3B; /* Bright yellow background */
+        padding: 10px;
+        border-radius: 8px;
+        color: #000000 !important;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    /* Radio options themselves */
+    div[role="radiogroup"] > div {
         font-size: 22px !important;
         color: #000000 !important;
     }
@@ -68,7 +80,7 @@ st.markdown(
         padding: 14px 24px !important;
         border-radius: 12px !important;
         color: #FFFFFF !important;
-        background-color: #007BFF !important; /* Bootstrap blue */
+        background-color: #007BFF !important;
         border: none;
     }
 
