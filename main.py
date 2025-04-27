@@ -271,7 +271,22 @@ def schedule_matches():
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
         if format_opt == "Timed":
-            st.info(f"Timed match: Set Stopwatch to {match_time} minutes.")
+            st.markdown(
+                f"""
+                <style>
+                    .timed-info {{
+                        font-size: 20px;
+                        font-weight: bold;
+                        background-color: #4CAF50;
+                        color: white;
+                        padding: 10px;
+                        border-radius: 5px;
+                    }}
+                </style>
+                <div class="timed-info">
+                    Timed match: Set Stopwatch to {match_time} minutes.
+                </div>
+                """, unsafe_allow_html=True)
         else:
             if st.button("Begin Fast Four"):
                 st.info("Fast Four match: first to 4 games wins.")
