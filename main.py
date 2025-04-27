@@ -180,10 +180,10 @@ def sidebar_management():
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
-            st.header("Courts")
+            st.header("Select Courts")
             from streamlit_sortables import sort_items
             st.markdown("Drag to reorder:")
-
+            
             # Ensure courts are strings before sorting
             st.session_state.courts = [str(court) for court in st.session_state.courts]
 
@@ -192,12 +192,15 @@ def sidebar_management():
                 st.session_state.courts = new_order
                 save_data()
 
+            # Show courts list with remove buttons
             for i, court in enumerate(st.session_state.courts):
                 c1, c2 = st.columns([8, 1])
                 c1.write(court)
                 if c2.button("❌", key=f"rm_court_{i}"):
                     st.session_state.courts.pop(i)
                     save_data()
+            
+            # Add new court input
             new = st.text_input("Add Court", key="court_in")
             if st.button("Add Court") and new:
                 if new not in st.session_state.courts:
@@ -205,21 +208,27 @@ def sidebar_management():
                     save_data()
                 else:
                     st.warning("Court already exists.")
+            
+            # Reset courts button
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
 
-        # Tab 2 - Manage Players (remains unchanged)
+        # Tab 2 - Manage Players
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
-            st.header("Players")
+            st.header("Select Players")
+            
+            # Show players list with remove buttons
             for i, player in enumerate(st.session_state.players):
                 p1, p2 = st.columns([8, 1])
                 p1.write(player)
                 if p2.button("❌", key=f"rm_player_{i}"):
                     st.session_state.players.pop(i)
                     save_data()
+
+            # Add new player input
             newp = st.text_input("Add Player", key="player_in")
             if st.button("Add Player") and newp:
                 if newp not in st.session_state.players:
@@ -227,18 +236,19 @@ def sidebar_management():
                     save_data()
                 else:
                     st.warning("Player already exists.")
+            
+            # Reset players button
             if st.button("Reset Players"):
                 st.session_state.players = []
                 save_data()
 
-        # Tab 3 - Leaderboard (remains unchanged)
+        # Tab 3 - Leaderboard
         with tab3:
             player_scores = load_scores()
             display_leaderboard(player_scores)
 
             if st.button("Delete All Player Scores"):
                 delete_all_scores()
-
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
     st.write("### Leaderboard")
