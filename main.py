@@ -245,65 +245,69 @@ def schedule_matches():
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
     leftover_opt = st.radio("Leftover Action", ["Rest", "Play American Doubles"])
+
     if format_opt == "Timed":
-        match_time = st.number_input("Match Time (minutes)", 5, 60, 15)
+        match_time = st.number_input("Match Time (minutes)", 5, 60, 15, key="match_time")
     else:
         st.info("Fast Four: first to 4 games wins.")
 
-    if st.button("Generate Next Round"):
-        players = st.session_state.players.copy()
-        random.shuffle(players)
-        courts = st.session_state.courts.copy()
-        matches = []
-        used = set()
-        req = 4 if game_type == "Doubles" else 2
-        maxm = len(players) // req
-        if len(courts) < maxm:
-            st.warning("Not enough courts to schedule all matches.")
+    if st.button("Start Match"):
+        if format_opt == "Timed" and match_time < 5:
+            st.warning("Please select a match time of at least 5 minutes.")
+        else:
+            players = st.session_state.players.copy()
+            random.shuffle(players)
+            courts = st.session_state.courts.copy()
+            matches = []
+            used = set()
+            req = 4 if game_type == "Doubles" else 2
+            maxm = len(players) // req
+            if len(courts) < maxm:
+                st.warning("Not enough courts to schedule all matches.")
 
-        while courts and len(players) >= req:
-            grp = players[:req]
-            players = players[req:]
-            court = courts.pop(0)
-            matches.append((court, grp))
-            used.update(grp)
-            for i in range(len(grp)):
-                for j in range(i+1, len(grp)):
-                    st.session_state.history[grp[i]][grp[j]] += 1
-                    st.session_state.history[grp[j]][grp[i]] += 1
-
-        leftovers = players
-        if leftovers:
-            if game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles":
-                inserted = False
-                for idx, (court, grp) in enumerate(matches):
-                    if len(grp) == 2:
-                        if not any(p in st.session_state.recent_ad for p in grp):
-                            new_grp = grp + leftovers
-                            matches[idx] = (court, new_grp)
-                            st.session_state.recent_ad = set(new_grp)
-                            inserted = True
-                            break
-                if not inserted and courts:
-                    court = courts.pop(0)
-                    candidates = [p for p in used if p not in st.session_state.recent_ad]
-                    if len(candidates) < 2:
-                        candidates = list(used)
-                    picks = random.sample(candidates, 2)
-                    st.session_state.recent_ad = set(picks + leftovers)
-                    grp = leftovers + picks
-                    matches.append((court, grp))
-                elif not inserted:
-                    matches.append(("Rest", leftovers))
-            elif courts:
+            while courts and len(players) >= req:
+                grp = players[:req]
+                players = players[req:]
                 court = courts.pop(0)
-                grp = leftovers
                 matches.append((court, grp))
-            else:
-                matches.append(("Rest", leftovers))
+                used.update(grp)
+                for i in range(len(grp)):
+                    for j in range(i+1, len(grp)):
+                        st.session_state.history[grp[i]][grp[j]] += 1
+                        st.session_state.history[grp[j]][grp[i]] += 1
 
-        st.session_state.schedule.append(matches)
-        st.session_state.round = len(st.session_state.schedule)
+            leftovers = players
+            if leftovers:
+                if game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles":
+                    inserted = False
+                    for idx, (court, grp) in enumerate(matches):
+                        if len(grp) == 2:
+                            if not any(p in st.session_state.recent_ad for p in grp):
+                                new_grp = grp + leftovers
+                                matches[idx] = (court, new_grp)
+                                st.session_state.recent_ad = set(new_grp)
+                                inserted = True
+                                break
+                    if not inserted and courts:
+                        court = courts.pop(0)
+                        candidates = [p for p in used if p not in st.session_state.recent_ad]
+                        if len(candidates) < 2:
+                            candidates = list(used)
+                        picks = random.sample(candidates, 2)
+                        st.session_state.recent_ad = set(picks + leftovers)
+                        grp = leftovers + picks
+                        matches.append((court, grp))
+                    elif not inserted:
+                        matches.append(("Rest", leftovers))
+                elif courts:
+                    court = courts.pop(0)
+                    grp = leftovers
+                    matches.append((court, grp))
+                else:
+                    matches.append(("Rest", leftovers))
+
+            st.session_state.schedule.append(matches)
+            st.session_state.round = len(st.session_state.schedule)
 
     if st.session_state.schedule and st.session_state.round > 0:
         r = st.session_state.round
