@@ -87,8 +87,15 @@ def sidebar_management():
             if st.button("Delete All Player Scores"):
                 delete_all_scores()
 
-# Scheduling matches based on selected players
+# Scheduling matches based on selected players and courts
 def schedule_matches():
+    # Initialize selected players and courts
+    if 'selected_players' not in st.session_state:
+        st.session_state.selected_players = []
+
+    if 'selected_courts' not in st.session_state:
+        st.session_state.selected_courts = []
+
     # Get the list of selected players for tonight's matches
     selected_players = st.session_state.selected_players
     if len(selected_players) < 2:
@@ -96,8 +103,9 @@ def schedule_matches():
         return
 
     # Get courts from the session state
-    if 'courts' not in st.session_state or len(st.session_state.courts) == 0:
-        st.warning("Please add courts before scheduling.")
+    selected_courts = st.session_state.selected_courts
+    if len(selected_courts) == 0:
+        st.warning("Please select at least one court for scheduling.")
         return
 
     # Match type options
@@ -159,7 +167,7 @@ def schedule_matches():
 def reset_rounds():
     st.session_state.match_courts = []
     st.session_state.selected_players = []
-    st.session_state.round_scores = {}
+    st.session_state.round_scores = []
 
 # Main app layout
 def main():
@@ -169,9 +177,16 @@ def main():
     # Tab for scheduling matches
     with st.container():
         st.header("Schedule Matches for Tonight")
-        st.write("Select the players for tonight's matches.")
+        st.write("Select the players and courts for tonight's matches.")
 
-        # Multiselect to select players for tonight
+        # Selector for courts
+        st.session_state.selected_courts = st.multiselect(
+            "Select Courts",
+            st.session_state.courts,
+            key="selected_courts"
+        )
+
+        # Selector for players
         st.session_state.selected_players = st.multiselect(
             "Select Players",
             st.session_state.players,
