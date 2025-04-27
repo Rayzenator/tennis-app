@@ -253,6 +253,13 @@ def schedule_matches():
         cr = st.session_state.schedule[r - 1]
         for court, players in cr:
             st.write(f"{court}: {', '.join(players)}")
+            scores = {}
+            for player in players:
+                score = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}_{r}_{court}")
+                scores[player] = score
+            if st.button(f"Submit Scores for {court}", key=f"submit_scores_{r}_{court}"):
+                update_scores(load_scores(), players, scores)
+                sidebar_management()  # Refresh leaderboard
 
         st.download_button(
             "Download CSV", generate_csv(cr), file_name=f"round_{r}.csv", mime="text/csv"
@@ -261,6 +268,12 @@ def schedule_matches():
         st.download_button(
             "Download PDF", generate_pdf(cr, r), file_name=f"round_{r}.pdf", mime="application/pdf"
         )
+
+    if st.button("Reset Rounds"):
+        st.session_state.schedule = []
+        st.session_state.round = 0
+        st.session_state.recent_ad = set()
+        st.success("Rounds reset. You can start generating again.")
 
 sidebar_management()
 schedule_matches()
