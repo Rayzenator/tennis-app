@@ -76,8 +76,6 @@ def save_data():
 def sidebar_management():
     with st.sidebar:
         tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Leaderboard"])
-        
-        # Tab 1 - Manage Courts
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
@@ -105,8 +103,6 @@ def sidebar_management():
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
-        
-        # Tab 2 - Manage Players
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
@@ -128,24 +124,19 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
-        # Tab 3 - Leaderboard
         with tab3:
             player_scores = load_scores()
             display_leaderboard(player_scores)
-
-            if st.button("Delete All Player Scores"):
-                delete_all_scores()
+            if st.button("Delete All Scores"):
+                st.session_state.scores = {}
+                save_scores(st.session_state.scores)
+                st.success("All scores deleted.")
 
 def display_leaderboard(player_scores):
     sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
     st.write("### Leaderboard")
     for i, (player, score) in enumerate(sorted_scores, start=1):
         st.write(f"{i}. {player}: {score} points")
-
-def delete_all_scores():
-    # Delete all scores by clearing the scores file
-    save_scores({})
-    st.success("All player scores have been deleted.")
 
 def update_scores(current_scores, players, new_scores):
     for player in players:
@@ -189,6 +180,57 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
+# Timer logic with Pause and Stop
+def timer_logic(match_time):
+    if 'timer_running' not in st.session_state:
+        st.session_state.timer_running = False
+    if 'timer_paused' not in st.session_state:
+        st.session_state.timer_paused = False
+    if 'remaining_time' not in st.session_state:
+        st.session_state.remaining_time = match_time * 60  # Set initial match time in seconds
+
+    def start_timer():
+        st.session_state.timer_running = True
+        st.session_state.timer_paused = False
+
+    def pause_timer():
+        st.session_state.timer_paused = True
+
+    def reset_timer():
+        st.session_state.timer_running = False
+        st.session_state.timer_paused = False
+        st.session_state.remaining_time = match_time * 60  # Reset the time to the initial value
+
+    # Timer display
+    if st.session_state.timer_running and not st.session_state.timer_paused:
+        total_time = st.session_state.remaining_time
+    else:
+        total_time = match_time * 60  # Use the initial match time if paused or stopped
+
+    col1, col2 = st.columns([3, 1])
+
+    with col1:
+        m, s = divmod(total_time, 60)
+        st.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
+
+    with col2:
+        if st.session_state.timer_running and not st.session_state.timer_paused:
+            if st.button("Pause Timer"):
+                pause_timer()
+        if st.session_state.timer_running:
+            if st.button("Reset/Stop Timer"):
+                reset_timer()
+
+    if st.session_state.timer_running and not st.session_state.timer_paused:
+        if st.session_state.remaining_time > 0:
+            st.session_state.remaining_time -= 1
+            time.sleep(1)
+        else:
+            st.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
+            st.markdown(ALERT_SOUND, unsafe_allow_html=True)
+            st.success("Time's up!")
+
+# Match scheduling
 def schedule_matches():
     if 'history' not in st.session_state:
         st.session_state.history = defaultdict(lambda: defaultdict(int))
@@ -271,20 +313,7 @@ def schedule_matches():
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
         if format_opt == "Timed":
-            if st.button("Start Play"):
-                total = match_time * 60
-                st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
-                pl = st.empty()
-                for t in range(total,0,-1):
-                    m,s=divmod(t,60)
-                    pl.markdown(f"<div class='big-clock'>{m:02d}:{s:02d}</div>", unsafe_allow_html=True)
-                    time.sleep(1)
-                pl.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
-                st.markdown(ALERT_SOUND, unsafe_allow_html=True)
-                st.success("Time's up!")
-        else:
-            if st.button("Begin Fast Four"):
-                st.info("Fast Four match: first to 4 games wins.")
+            timer_logic(match_time)
 
         match_players = [player for _, group in cr for player in group if player != "Rest"]
         match_results(match_players)
