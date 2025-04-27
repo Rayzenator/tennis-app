@@ -17,25 +17,25 @@ st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 st.markdown(
     """
     <style>
-    /* General text and inputs */
-    .stMarkdown, .stTextInput, .stNumberInput, .stSelectbox, .stButton, .stRadio, .stTabs, .stCheckbox {
+    /* General body text */
+    .stMarkdown, .stTextInput, .stNumberInput, .stSelectbox, .stButton, .stRadio, .stTabs, .stCheckbox, .stTextArea, .stDataFrame {
         font-size: 22px !important;
-        color: #FFFFFF !important;
+        color: #DDDDDD !important; /* Softer light grey */
     }
 
-    /* Headings (h1, h2, h3) with background and white font */
+    /* Headings with background and white text */
     h1, h2, h3, h4, h5, h6 {
         font-size: 30px !important;
-        background-color: #444444;
+        background-color: #555555;
         padding: 12px;
         border-radius: 10px;
-        color: #FFFFFF !important;
+        color: #FFFFFF !important; /* Pure white for headings */
     }
 
-    /* Radio buttons (Match Type, Format etc.) */
+    /* Radio buttons labels */
     div[role="radiogroup"] > label {
         font-size: 22px !important;
-        color: #FFFFFF !important;
+        color: #DDDDDD !important;
     }
 
     /* Selectboxes and text inputs */
@@ -44,7 +44,7 @@ st.markdown(
         height: 50px !important;
         padding: 12px !important;
         border-radius: 10px !important;
-        color: #FFFFFF !important;
+        color: #DDDDDD !important;
         background-color: #333333 !important;
     }
 
@@ -55,16 +55,17 @@ st.markdown(
         border-radius: 12px !important;
     }
 
-    /* Match Info (Court match text) */
+    /* Match Info (Court matches text) */
     .element-container p {
         font-size: 24px !important;
         font-weight: bold;
-        color: #FFFFFF !important;
+        color: #DDDDDD !important;
     }
 
-    /* Sidebar */
+    /* Sidebar content */
     .sidebar .sidebar-content {
         font-size: 22px !important;
+        color: #DDDDDD !important;
     }
 
     /* Timed match info box */
@@ -75,10 +76,10 @@ st.markdown(
         text-align: center;
     }
 
-    /* Tabs text */
+    /* Tabs */
     .stTabs [data-baseweb="tab"] {
         font-size: 22px !important;
-        color: #FFFFFF !important;
+        color: #DDDDDD !important;
     }
     </style>
     """,
