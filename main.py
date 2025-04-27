@@ -33,7 +33,7 @@ st.markdown(
     h1, h2, h3 {
         font-size: 32px !important;
         padding: 16px !important;
-        background-color: #FFEB3B !important; /* Bright Yellow */
+        background-color: #FFF9C4 !important; /* Softer Pastel Yellow */
         color: #000000 !important; /* Black text */
         border-radius: 10px;
         width: 100%;
@@ -96,6 +96,15 @@ st.markdown(
     .stTabs [data-baseweb="tab"] {
         font-size: 22px !important;
         color: #000000 !important;
+    }
+
+    /* Increase the size of + and - buttons */
+    .stNumberInput button {
+        font-size: 28px !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        background-color: #007BFF !important;
+        color: #FFFFFF !important;
     }
     </style>
     """,
