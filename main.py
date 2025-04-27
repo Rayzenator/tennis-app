@@ -10,7 +10,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 
-
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 
@@ -417,14 +416,6 @@ def schedule_matches():
         st.session_state.schedule = []
         st.session_state.history = defaultdict(lambda: defaultdict(int))
         st.session_state.round = 0
-        st.session_state.recent_ad = set()
-        st.session_state.player_scores = {player: 0 for player in st.session_state.players}
-
-if 'initialized' not in st.session_state:
-    d = load_data()
-    st.session_state.courts = d['courts']
-    st.session_state.players = d['players']
-    st.session_state.initialized = True
 
 sidebar_management()
 schedule_matches()
