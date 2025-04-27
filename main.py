@@ -207,8 +207,16 @@ if 'initialized' not in st.session_state:
 # Sidebar UI
 sidebar_management()
 
+# Main screen UI
+st.title("Tennis Match Scheduler 🎾")
+
+match_type = st.radio("Select Match Type", ["Singles", "Doubles", "American Doubles"], horizontal=True)
+game_format = st.radio("Select Game Format", ["Timed Matches", "Fast Four"], horizontal=True)
+time_per_match = st.number_input("Minutes per Match (for Timed Matches)", min_value=5, max_value=120, value=20)
+rounds = st.number_input("How many rounds to generate?", min_value=1, max_value=10, value=1)
+
 # Match scheduling logic
-def schedule_matches():
+def schedule_matches(match_type, game_format, time_per_match, rounds):
     players = st.session_state.players
     courts = st.session_state.courts
     if not players or not courts:
@@ -228,11 +236,17 @@ def schedule_matches():
     for court, match_players in matches:
         st.write(f"**Court {court}:** {match_players[0]} vs {match_players[1]}")
 
+    st.info(f"**Format:** {game_format} | **Match Duration:** {time_per_match} minutes")
+
     match_players = [p for _, match in matches for p in match]
     match_results(match_players)
 
-    st.download_button("Download as PDF", generate_pdf(matches, 1), file_name="tennis_schedule.pdf")
+    st.download_button("Download as PDF", generate_pdf(matches, rounds), file_name="tennis_schedule.pdf")
     st.download_button("Download as CSV", generate_csv(matches), file_name="tennis_schedule.csv")
+
+# Button to trigger scheduling
+if st.button("Generate Schedule"):
+    schedule_matches(match_type, game_format, time_per_match, rounds)
 
 # Display match scheduling UI and leaderboard
 schedule_matches()
