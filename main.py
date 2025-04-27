@@ -122,18 +122,12 @@ def generate_pdf(matches, rnd):
     c.drawString(50, y, f"Tennis Schedule - Round {rnd}")
     y -= 30
     c.setFont("Helvetica", 12)
-    
-    if not matches:
-        c.drawString(50, y, "No matches scheduled.")
+    for court, pts in matches:
+        c.drawString(50, y, f"Court {court}: {' vs '.join(pts)}")
         y -= 20
-    else:
-        for court, pts in matches:
-            c.drawString(50, y, f"Court {court}: {' vs '.join(pts)}")
-            y -= 20
-            if y < 50:
-                c.showPage()
-                y = h - 40
-    
+        if y < 50:
+            c.showPage()
+            y = h - 40
     c.save()
     buf.seek(0)
     return buf
@@ -153,6 +147,7 @@ if 'initialized' not in st.session_state:
     st.session_state.initialized = True
     st.session_state.round_number = 0
     st.session_state.history = []
+    st.session_state.scores = load_scores()
 
 # Sidebar UI
 sidebar_management()
@@ -193,32 +188,35 @@ def enter_scores(players):
         time.sleep(1)
         st.experimental_rerun()
 
-# Timer Functions
-import time
+# Timer logic
+def display_timer():
+    st.markdown("<h3 style='text-align: center;'>Big Timer</h3>", unsafe_allow_html=True)
+    if "start_time" not in st.session_state:
+        st.session_state.start_time = None
+        st.session_state.running = False
+    if "elapsed_time" not in st.session_state:
+        st.session_state.elapsed_time = 0
 
-# Add the timer in your app logic
-if 'start_time' not in st.session_state:
-    st.session_state.start_time = None
-    st.session_state.timer_running = False
+    if st.session_state.running:
+        st.session_state.elapsed_time = time.time() - st.session_state.start_time
+    minutes, seconds = divmod(int(st.session_state.elapsed_time), 60)
+    st.markdown(f"<div class='big-clock'>{minutes:02}:{seconds:02}</div>", unsafe_allow_html=True)
 
-def start_timer():
-    st.session_state.start_time = time.time()
-    st.session_state.timer_running = True
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("Start Timer"):
+            st.session_state.start_time = time.time() - st.session_state.elapsed_time
+            st.session_state.running = True
+    with col2:
+        if st.button("Stop Timer"):
+            st.session_state.running = False
+    with col3:
+        if st.button("Reset Timer"):
+            st.session_state.start_time = None
+            st.session_state.elapsed_time = 0
+            st.session_state.running = False
 
-def stop_timer():
-    st.session_state.timer_running = False
-
-def reset_timer():
-    st.session_state.start_time = None
-    st.session_state.timer_running = False
-
-def get_time():
-    if st.session_state.timer_running:
-        elapsed = time.time() - st.session_state.start_time
-        return time.strftime('%H:%M:%S', time.gmtime(elapsed))
-    return '00:00:00'
-
-# Main timer and match scheduling interface
+# Match scheduling and score handling
 st.markdown(f"## Round {st.session_state.round_number}")
 
 if st.button("Schedule New Round"):
@@ -237,21 +235,4 @@ if st.session_state.history:
     enter_scores(players_in_round)
 
     st.download_button("Download as PDF", generate_pdf(latest_round['matches'], latest_round['round']), file_name=f"tennis_schedule_round_{latest_round['round']}.pdf")
-    st.download_button("Download as CSV", generate_csv(latest_round['matches']), file_name=f"tennis_schedule_round_{latest_round['round']}.csv")
-
-# Timer Section
-st.markdown("### Timer")
-st.write("Current Time: " + get_time())
-
-col1, col2, col3 = st.columns([1, 1, 1])
-with col1:
-    if st.button("Start Timer"):
-        start_timer()
-
-with col2:
-    if st.button("Stop Timer"):
-        stop_timer()
-
-with col3:
-    if st.button("Reset Timer"):
-        reset_timer()
+    st.download_button("Download
