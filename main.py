@@ -174,19 +174,37 @@ def schedule_matches():
 
     return matches
 
+# Enter match scores and trigger leaderboard update
 def enter_scores(players):
     st.subheader("Enter Scores")
-    scores = {}
+    
+    # Initialize or get scores from session state
+    if 'scores' not in st.session_state:
+        st.session_state.scores = {player: 0 for player in players}
+
     for player in players:
-        scores[player] = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}_{time.time()}")
+        # Fetch the current score from session state or default to 0
+        current_score = st.session_state.scores.get(player, 0)
+        st.session_state.scores[player] = st.number_input(
+            f"Score for {player}",
+            min_value=0,
+            value=current_score,
+            key=f"score_{player}"
+        )
+
     if st.button("Submit Scores"):
+        # Load existing scores
         all_scores = load_scores()
-        for player, pts in scores.items():
+        
+        # Update scores from the session state
+        for player, pts in st.session_state.scores.items():
             all_scores[player] = all_scores.get(player, 0) + pts
+        
+        # Save the updated scores
         save_scores(all_scores)
+        
+        # Success message
         st.success("Scores updated!")
-        time.sleep(1)
-        st.experimental_rerun()
 
 # Timer logic
 def display_timer():
