@@ -161,6 +161,12 @@ sidebar_management()
 # Main page
 st.title("🎾 Tennis Scheduler")
 
+# Format options
+st.subheader("Match Settings")
+match_type = st.radio("Select Match Type", ["Fast Four", "Timed"], key="match_type")
+match_format = st.radio("Select Match Format", ["Singles", "Doubles"], key="match_format")
+leftovers_format = st.radio("Leftovers Scheduling", ["American Doubles", "Rest"], key="leftovers_format")
+
 # Match scheduling
 if st.button("Schedule New Round"):
     st.session_state.round_number += 1
