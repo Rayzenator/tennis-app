@@ -306,7 +306,10 @@ def schedule_matches():
     st.header("Schedule Matches")
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
-    leftover_opt = st.radio("Leftover Action", ["Rest", "Play American Doubles"])
+    
+    # Use checkboxes for Rest and Play American Doubles options
+    leftover_opt = st.checkbox("Leftover Action (Rest or Play American Doubles)", value=False)
+    
     if format_opt == "Timed":
         match_time = st.number_input("Match Time (minutes)", 5, 60, 15)
     else:
@@ -339,7 +342,7 @@ def schedule_matches():
 
         leftovers = players
         if leftovers:
-            if game_type == "Singles" and len(leftovers) == 1 and leftover_opt == "Play American Doubles":
+            if game_type == "Singles" and len(leftovers) == 1 and leftover_opt:
                 inserted = False
                 for idx, (court, grp) in enumerate(matches):
                     if len(grp) == 2:
