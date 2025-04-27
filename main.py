@@ -46,7 +46,6 @@ def timer_logic(match_time):
     if 'start_time' in st.session_state:
         elapsed_time = time.time() - st.session_state.start_time
         remaining_time = match_time * 60 - elapsed_time
-
         minutes, seconds = divmod(remaining_time, 60)
         timer_display = f"{int(minutes):02d}:{int(seconds):02d}"
 
@@ -57,6 +56,9 @@ def timer_logic(match_time):
             st.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
             st.markdown(ALERT_SOUND, unsafe_allow_html=True)
             st.success("Time's up!")
+
+        # Update the clock every second
+        st.experimental_rerun()  # Forces a re-run to update the timer
 
 # Data persistence
 DATA_FILE = "data.json"
