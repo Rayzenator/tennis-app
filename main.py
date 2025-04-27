@@ -1,9 +1,13 @@
 import streamlit as st
 import random
 import time
+from collections import defaultdict
 import json
 import os
-from collections import defaultdict
+import pandas as pd
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -14,53 +18,6 @@ body { background-color: #1e1e1e; color: white; }
 </style>
 """
 st.markdown(DARK_MODE_STYLE, unsafe_allow_html=True)
-
-# Clock & alert styles
-CLOCK_STYLE = """
-<style>
-.big-clock {
-    font-size: 72px;
-    font-weight: bold;
-    color: #00FF00;
-    background-color: #000000;
-    padding: 20px;
-    text-align: center;
-    border-radius: 15px;
-}
-</style>
-"""
-ALERT_SOUND = """
-<audio id="beep" autoplay loop>
-  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
-  Your browser does not support the audio element.
-</audio>
-<script>
-  const sound = document.getElementById('beep');
-  sound.play();
-  setTimeout(() => { sound.pause(); sound.currentTime = 0; }, 10000);
-</script>
-"""
-
-# Timer logic
-def timer_logic(match_time):
-    # Only run the timer if it's started
-    if 'start_time' in st.session_state and st.session_state.timer_running:
-        elapsed_time = time.time() - st.session_state.start_time
-        remaining_time = match_time * 60 - elapsed_time
-        minutes, seconds = divmod(remaining_time, 60)
-        timer_display = f"{int(minutes):02d}:{int(seconds):02d}"
-        
-        # Update session state with the new timer value
-        st.session_state.timer_display = timer_display
-
-        # Display the timer on the page
-        st.markdown(f"<div class='big-clock'>{st.session_state.timer_display}</div>", unsafe_allow_html=True)
-
-        # If time is up, show an alert
-        if remaining_time <= 0:
-            st.markdown("<div class='big-clock'>00:00</div>", unsafe_allow_html=True)
-            st.markdown(ALERT_SOUND, unsafe_allow_html=True)
-            st.success("Time's up!")
 
 # Data persistence
 DATA_FILE = "data.json"
@@ -92,8 +49,7 @@ def save_data():
 # Sidebar management
 def sidebar_management():
     with st.sidebar:
-        tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Leaderboard"])
-        
+        tab1, tab2 = st.tabs(["Manage Courts", "Manage Players"])
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = []
@@ -121,7 +77,6 @@ def sidebar_management():
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
-
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
@@ -143,15 +98,54 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
-        with tab3:
-            st.header("Leaderboard")
-            player_scores = load_scores()
-            sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
-            st.write("### Leaderboard")
-            for i, (player, score) in enumerate(sorted_scores, start=1):
-                st.write(f"{i}. {player}: {score} points")
+def display_leaderboard(player_scores):
+    sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
+    st.write("### Leaderboard")
+    for i, (player, score) in enumerate(sorted_scores, start=1):
+        st.write(f"{i}. {player}: {score} points")
 
-# Main match scheduling function
+def update_scores(current_scores, players, new_scores):
+    for player in players:
+        current_scores[player] = current_scores.get(player, 0) + new_scores.get(player, 0)
+    save_scores(current_scores)
+    return current_scores
+
+def match_results(players):
+    st.write("### Enter Scores for Each Player")
+    player_scores = {}
+    for player in players:
+        score = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}")
+        player_scores[player] = score
+    player_scores = update_scores(load_scores(), players, player_scores)
+    display_leaderboard(player_scores)
+
+# Export helpers
+def generate_pdf(matches, rnd):
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    w, h = letter
+    y = h - 40
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, y, f"Tennis Schedule - Round {rnd}")
+    y -= 30
+    c.setFont("Helvetica", 12)
+    for court, pts in matches:
+        c.drawString(50, y, f"Court {court}: {' vs '.join(pts)}")
+        y -= 20
+        if y < 50:
+            c.showPage()
+            y = h - 40
+    c.save()
+    buf.seek(0)
+    return buf
+
+def generate_csv(matches):
+    df = pd.DataFrame([(c, ', '.join(players)) for c, players in matches], columns=["Court", "Players"])
+    buf = BytesIO()
+    df.to_csv(buf, index=False)
+    buf.seek(0)
+    return buf
+
 def schedule_matches():
     if 'history' not in st.session_state:
         st.session_state.history = defaultdict(lambda: defaultdict(int))
@@ -166,13 +160,11 @@ def schedule_matches():
     game_type = st.radio("Match Type", ["Doubles", "Singles"])
     format_opt = st.radio("Format", ["Timed", "Fast Four"])
     leftover_opt = st.radio("Leftover Action", ["Rest", "Play American Doubles"])
-    
     if format_opt == "Timed":
         match_time = st.number_input("Match Time (minutes)", 5, 60, 15)
     else:
         st.info("Fast Four: first to 4 games wins.")
 
-    # Generate the round
     if st.button("Generate Next Round"):
         players = st.session_state.players.copy()
         random.shuffle(players)
@@ -228,32 +220,34 @@ def schedule_matches():
         st.session_state.schedule.append(matches)
         st.session_state.round = len(st.session_state.schedule)
 
-        # Store the matches in session state
-        st.session_state.generated_round = matches
+    if st.session_state.schedule and st.session_state.round > 0:
+        r = st.session_state.round
+        st.subheader(f"Round {r}")
+        cr = st.session_state.schedule[r-1]
+        for court, pts in cr:
+            st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
-    # Show the match schedule if it exists
-    if 'generated_round' in st.session_state:
-        st.subheader("Generated Round Matches")
-        for court, players in st.session_state.generated_round:
-            st.write(f"Court: {court} - Players: {', '.join(players)}")
+        if st.button("Start Play"):
+            match_players = [player for _, group in cr for player in group if player != "Rest"]
+            match_results(match_players)
 
-    # Show the "Start Play" button after the round is generated
-    if 'generated_round' in st.session_state and st.button("Start Play"):
-        st.session_state.start_time = time.time()  # Start the timer when "Start Play" is clicked
-        st.session_state.timer_running = True
-        st.success("Timer Started!")
-    
-    # Show Stop Timer button
-    if st.session_state.get("timer_running", False):
-        if st.button("Stop Timer"):
-            st.session_state.timer_running = False
-            st.session_state.timer_display = None
-            st.success("Timer Stopped")
+        st.download_button("PDF", data=generate_pdf(cr, r), file_name=f"round_{r}.pdf")
+        st.download_button("CSV", data=generate_csv(cr), file_name=f"round_{r}.csv")
 
-    if st.session_state.get("timer_running", False):
-        timer_logic(match_time)
+    c1, c2, c3 = st.columns(3)
+    if c1.button("Previous Round") and st.session_state.round > 1:
+        st.session_state.round -= 1
+    if st.session_state.round < len(st.session_state.schedule):
+        if c2.button("Next Round"):
+            st.session_state.round += 1
+    else:
+        c2.button("Next Round", disabled=True)
+    if c3.button("Reset Rounds"):
+        st.session_state.schedule = []
+        st.session_state.history = defaultdict(lambda: defaultdict(int))
+        st.session_state.round = 0
+        st.session_state.recent_ad = set()
 
-# Initialize session state
 if 'initialized' not in st.session_state:
     d = load_data()
     st.session_state.courts = d['courts']
