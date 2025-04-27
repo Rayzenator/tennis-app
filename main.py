@@ -235,4 +235,7 @@ if st.session_state.history:
     enter_scores(players_in_round)
 
     st.download_button("Download as PDF", generate_pdf(latest_round['matches'], latest_round['round']), file_name=f"tennis_schedule_round_{latest_round['round']}.pdf")
-    st.download_button("Download
+    st.download_button("Download as CSV", generate_csv(latest_round['matches']), file_name=f"tennis_schedule_round_{latest_round['round']}.csv")
+    
+    # Timer placement
+    display_timer()
