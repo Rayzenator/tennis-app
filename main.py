@@ -43,8 +43,8 @@ ALERT_SOUND = """
 
 # Timer logic
 def timer_logic(match_time):
-    # Ensure we have a start time and elapsed time in session state
     if 'start_time' in st.session_state:
+        # Calculate elapsed time
         elapsed_time = time.time() - st.session_state.start_time
         remaining_time = match_time * 60 - elapsed_time
         minutes, seconds = divmod(remaining_time, 60)
@@ -52,7 +52,7 @@ def timer_logic(match_time):
 
         # Update session state with the new timer value
         st.session_state.timer_display = timer_display
-        
+
         # Display the timer on the page
         st.markdown(f"<div class='big-clock'>{st.session_state.timer_display}</div>", unsafe_allow_html=True)
 
@@ -240,7 +240,17 @@ def schedule_matches():
     # Show the "Start Play" button after the round is generated
     if 'generated_round' in st.session_state and st.button("Start Play"):
         st.session_state.start_time = time.time()  # Start the timer when "Start Play" is clicked
+        st.session_state.timer_running = True
         st.success("Timer Started!")
+    
+    # Show Stop Timer button
+    if st.session_state.get("timer_running", False):
+        if st.button("Stop Timer"):
+            st.session_state.timer_running = False
+            st.session_state.timer_display = None
+            st.success("Timer Stopped")
+
+    if st.session_state.get("timer_running", False):
         timer_logic(match_time)
 
 # Initialize session state
