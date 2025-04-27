@@ -7,7 +7,6 @@ import pandas as pd
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-import threading
 
 # Page configuration and dark mode styling
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -35,96 +34,15 @@ def save_data():
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
 
-# Load or initialize scores data
-def load_scores():
-    if os.path.exists(SCORES_FILE):
-        with open(SCORES_FILE, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_scores(scores):
-    with open(SCORES_FILE, 'w') as f:
-        json.dump(scores, f)
-
-def delete_all_scores():
-    if os.path.exists(SCORES_FILE):
-        os.remove(SCORES_FILE)
-
-# Sidebar management
-def sidebar_management():
-    with st.sidebar:
-        tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Settings"])
-        with tab1:
-            st.header("Courts")
-            from streamlit_sortables import sort_items
-            st.markdown("Drag to reorder:")
-            new_order = sort_items(st.session_state.courts, direction="vertical")
-            if new_order != st.session_state.courts:
-                st.session_state.courts = new_order
-                save_data()
-
-            for i, court in enumerate(st.session_state.courts):
-                c1, c2 = st.columns([8, 1])
-                c1.write(court)
-                if c2.button("❌", key=f"rm_court_{i}"):
-                    st.session_state.courts.pop(i)
-                    save_data()
-            new = st.text_input("Add Court", key="court_in")
-            if st.button("Add Court") and new:
-                if new not in st.session_state.courts:
-                    st.session_state.courts.append(new)
-                    save_data()
-                else:
-                    st.warning("Court already exists.")
-            if st.button("Reset Courts"):
-                st.session_state.courts = []
-                save_data()
-        with tab2:
-            st.header("Players")
-            for i, player in enumerate(st.session_state.players):
-                p1, p2 = st.columns([8, 1])
-                p1.write(player)
-                if p2.button("❌", key=f"rm_player_{i}"):
-                    st.session_state.players.pop(i)
-                    save_data()
-            newp = st.text_input("Add Player", key="player_in")
-            if st.button("Add Player") and newp:
-                if newp not in st.session_state.players:
-                    st.session_state.players.append(newp)
-                    save_data()
-                else:
-                    st.warning("Player already exists.")
-            if st.button("Reset Players"):
-                st.session_state.players = []
-                save_data()
-        with tab3:
-            st.header("Settings")
-            if st.button("Delete All Scores"):
-                st.warning("Are you sure you want to delete all scores? This cannot be undone.")
-                if st.button("Confirm Delete", key="confirm_delete"):
-                    delete_all_scores()
-                    st.success("All scores have been deleted.")
-
-        st.markdown("---")
-        st.markdown("### Leaderboard")
-        scores = load_scores()
-        if scores:
-            sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-            for i, (player, score) in enumerate(sorted_scores, 1):
-                st.write(f"{i}. {player}: {score} points")
-
-# Timer management
-def start_timer(duration, session_key):
-    end_time = time.time() + duration * 60
-    while time.time() < end_time and session_key in st.session_state:
-        remaining_time = int(end_time - time.time())
-        minutes = remaining_time // 60
-        seconds = remaining_time % 60
+# Timer management (simplified)
+def update_timer():
+    if 'start_time' in st.session_state:
+        elapsed_time = time.time() - st.session_state.start_time
+        minutes = int(elapsed_time // 60)
+        seconds = int(elapsed_time % 60)
         st.session_state.timer_display = f"{minutes:02}:{seconds:02}"
-        time.sleep(1)
-        if not st.session_state.get(session_key, False):
-            break
-    st.session_state.timer_running = False
+    else:
+        st.session_state.timer_display = "00:00"
 
 # Export helpers
 def generate_pdf(matches, rnd):
@@ -161,8 +79,28 @@ if 'initialized' not in st.session_state:
     st.session_state.initialized = True
     st.session_state.round_number = 0
     st.session_state.history = []
-    st.session_state.timer_running = False
     st.session_state.timer_display = "00:00"
+    st.session_state.timer_running = False
+
+# Sidebar UI
+def sidebar_management():
+    with st.sidebar:
+        tab1, tab2, tab3 = st.tabs(["Manage Courts", "Manage Players", "Settings"])
+        with tab1:
+            st.header("Courts")
+            new = st.text_input("Add Court", key="court_in")
+            if st.button("Add Court") and new:
+                if new not in st.session_state.courts:
+                    st.session_state.courts.append(new)
+                    save_data()
+
+        with tab2:
+            st.header("Players")
+            newp = st.text_input("Add Player", key="player_in")
+            if st.button("Add Player") and newp:
+                if newp not in st.session_state.players:
+                    st.session_state.players.append(newp)
+                    save_data()
 
 # Sidebar UI
 sidebar_management()
@@ -189,22 +127,26 @@ def schedule_matches():
 
     return matches
 
-def enter_scores(players):
-    st.subheader("Enter Scores")
-    scores = {}
-    for player in players:
-        scores[player] = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}_{time.time()}")
-    if st.button("Submit Scores"):
-        all_scores = load_scores()
-        for player, pts in scores.items():
-            all_scores[player] = all_scores.get(player, 0) + pts
-        save_scores(all_scores)
-        st.success("Scores updated!")
-        time.sleep(1)
-        st.experimental_rerun()
+# Timer control
+st.subheader("Match Timer")
+st.write("Match Duration: 30 minutes")
+st.write(f"Time Remaining: {st.session_state.timer_display}")
 
-st.markdown(f"## Round {st.session_state.round_number}")
+if st.session_state.timer_running:
+    if st.button("Pause Timer"):
+        st.session_state.timer_running = False
+elif st.button("Start Timer"):
+    st.session_state.timer_running = True
+    st.session_state.start_time = time.time()
 
+if st.session_state.timer_running:
+    update_timer()
+
+if st.button("Stop Timer"):
+    st.session_state.timer_running = False
+    st.session_state.timer_display = "00:00"
+
+# Schedule new round
 if st.button("Schedule New Round"):
     st.session_state.round_number += 1
     matches = schedule_matches()
@@ -218,25 +160,5 @@ if st.session_state.history:
         st.write(f"**Court {court}:** {players[0]} vs {players[1]}")
         players_in_round.extend(players)
 
-    enter_scores(players_in_round)
-
     st.download_button("Download as PDF", generate_pdf(latest_round['matches'], latest_round['round']), file_name=f"tennis_schedule_round_{latest_round['round']}.pdf")
     st.download_button("Download as CSV", generate_csv(latest_round['matches']), file_name=f"tennis_schedule_round_{latest_round['round']}.csv")
-
-# Timer Display
-st.subheader("Match Timer")
-st.write("Match Duration: 30 minutes")
-st.write(f"Time Remaining: {st.session_state.timer_display}")
-
-if not st.session_state.timer_running:
-    if st.button("Start Timer"):
-        st.session_state.timer_running = True
-        threading.Thread(target=start_timer, args=(30, "timer_running")).start()
-
-if st.session_state.timer_running:
-    if st.button("Pause Timer"):
-        st.session_state.timer_running = False
-
-if st.session_state.timer_running is False and st.button("Stop Timer"):
-    st.session_state.timer_display = "00:00"
-    st.session_state.timer_running = False
