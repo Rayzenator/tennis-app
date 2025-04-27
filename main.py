@@ -183,6 +183,10 @@ def sidebar_management():
             st.header("Courts")
             from streamlit_sortables import sort_items
             st.markdown("Drag to reorder:")
+
+            # Ensure courts are strings before sorting
+            st.session_state.courts = [str(court) for court in st.session_state.courts]
+
             new_order = sort_items(st.session_state.courts, direction="vertical")
             if new_order != st.session_state.courts:
                 st.session_state.courts = new_order
@@ -204,8 +208,8 @@ def sidebar_management():
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
-        
-        # Tab 2 - Manage Players
+
+        # Tab 2 - Manage Players (remains unchanged)
         with tab2:
             if 'players' not in st.session_state:
                 st.session_state.players = []
@@ -227,7 +231,7 @@ def sidebar_management():
                 st.session_state.players = []
                 save_data()
 
-        # Tab 3 - Leaderboard
+        # Tab 3 - Leaderboard (remains unchanged)
         with tab3:
             player_scores = load_scores()
             display_leaderboard(player_scores)
