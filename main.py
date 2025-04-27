@@ -178,10 +178,11 @@ def schedule_matches():
     if 'start_time' in st.session_state:
         timer_logic(match_time)
 
-    # Single Start Play button for both match and timer
-    start_play_button = st.button("Start Play")
-    if start_play_button:
-        st.session_state.start_time = time.time()  # Start timer when "Start Play" is clicked
+    # Display "Start Play" button only after round is generated
+    if st.session_state.round > 0:
+        start_play_button = st.button("Start Play", key="start_play_button")
+        if start_play_button:
+            st.session_state.start_time = time.time()  # Start timer when "Start Play" is clicked
 
     if st.button("Generate Next Round"):
         players = st.session_state.players.copy()
@@ -246,7 +247,7 @@ def schedule_matches():
             st.markdown(f"**Court {court}:** {' vs '.join(pts)}")
 
         if format_opt == "Timed":
-            if st.button("Start Play"):
+            if st.session_state.round > 0:
                 total = match_time * 60
                 st.markdown(CLOCK_STYLE, unsafe_allow_html=True)
                 pl = st.empty()
