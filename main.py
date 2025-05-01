@@ -67,14 +67,24 @@ def sidebar_management():
         with tab1:
             if 'courts' not in st.session_state:
                 st.session_state.courts = load_data().get("courts", [])
+            if 'court_counter' not in st.session_state:
+                st.session_state.court_counter = 0  # Counter to ensure unique keys
             st.header("Courts")
-            new_court = st.text_input("Add Court", key=f"court_in_{int(time.time())}")  # Unique key with timestamp
+
+            # Generate unique key for the text input
+            court_key = f"court_in_{st.session_state.court_counter}"
+            new_court = st.text_input("Add Court", key=court_key)
+
             if st.button("Add Court") and new_court:
                 if new_court not in st.session_state.courts:
                     st.session_state.courts.append(new_court)
                     save_data()
+
+                    # Increment counter to generate a new unique key on next use
+                    st.session_state.court_counter += 1
                 else:
                     st.warning("Court already exists.")
+            
             if st.button("Reset Courts"):
                 st.session_state.courts = []
                 save_data()
