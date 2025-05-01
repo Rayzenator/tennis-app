@@ -67,7 +67,7 @@ def sidebar_management():
             if 'courts' not in st.session_state:
                 st.session_state.courts = load_data().get("courts", [])
             st.header("Courts")
-            new_court = st.text_input("Add Court", key="court_in")
+            new_court = st.text_input("Add Court", key=f"court_in_{st.session_state.get('round', 0)}")  # Unique key
             if st.button("Add Court") and new_court:
                 if new_court not in st.session_state.courts:
                     st.session_state.courts.append(new_court)
@@ -84,7 +84,6 @@ def sidebar_management():
                 if st.button(f"❌ Remove {court}", key=f"rm_court_{i}"):
                     st.session_state.courts.pop(i)
                     save_data()
-
         # Tab 2 - Players
         with tab2:
             if 'players' not in st.session_state:
