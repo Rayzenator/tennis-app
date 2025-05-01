@@ -138,11 +138,13 @@ def match_results(players):
     st.write("### Enter Scores for Each Player")
     player_scores = {}
     for player in players:
-        score = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}")
+        score = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}_{time.time()}")
         player_scores[player] = score
-    if st.button("Submit Scores"):
-        player_scores = update_scores(load_scores(), players, player_scores)
-        save_scores(player_scores)
+    if st.button(f"Submit Scores for {' & '.join(players)}", key=f"submit_{'_'.join(players)}"):
+        scores = load_scores()
+        updated = update_scores(scores, players, player_scores)
+        save_scores(updated)
+        st.success("Scores submitted!")
         st.experimental_rerun()
 
 # Export helpers
