@@ -67,6 +67,11 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
         history = set()
     if player_roles is None:
         player_roles = {p: [] for p in players}
+    
+    # Ensure every player has a role entry (in case some players are missing from player_roles)
+    for p in players:
+        if p not in player_roles:
+            player_roles[p] = []
 
     matches = []
     players = players.copy()
