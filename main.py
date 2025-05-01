@@ -33,7 +33,7 @@ if "rounds" not in st.session_state:
 if "leaderboard" not in st.session_state:
     st.session_state.leaderboard = {player: 0 for player in st.session_state.players}
 if "scores_submitted" not in st.session_state:
-    st.session_state.scores_submitted = False
+    st.session_state.scores_submitted = [False] * 10  # Assuming max 10 rounds for now
 
 # UI Tabs
 tabs = st.tabs(["Courts", "Players", "Schedule", "Leaderboard"])
@@ -88,18 +88,20 @@ with tabs[2]:
     st.write("Selected Players:", st.session_state.selected_players)
     st.write("Selected Courts:", st.session_state.selected_courts)
 
-    # Generate a round of matches
-    if st.button("Generate First Round") or st.button("Generate Next Round"):
-        st.session_state.scores_submitted = False  # Reset score submission state
-        round_number = len(st.session_state.rounds) + 1
+    # Navigation between rounds
+    round_number = len(st.session_state.rounds)
+    selected_round = st.selectbox("Select Round", list(range(1, round_number + 1)) + ["Next Round"])
+    
+    if selected_round == "Next Round" and round_number > 0:
+        round_number += 1
         matches = generate_singles_matches(st.session_state.selected_players.copy(), st.session_state.selected_courts)
         st.session_state.rounds.append({
             "round": round_number,
             "matches": matches
         })
 
-    if st.session_state.rounds:
-        last_round = st.session_state.rounds[-1]
+    if round_number > 0:
+        last_round = st.session_state.rounds[round_number - 1]
         st.subheader(f"Round {last_round['round']}")
 
         for i, (p1, p2) in enumerate(last_round["matches"]):
@@ -113,7 +115,7 @@ with tabs[2]:
             with col2:
                 st.text_input(f"{p2}'s Score", key=f"score_{last_round['round']}_{i}_{p2}", value=0)
 
-        submit_button = st.button("Submit Scores", disabled=st.session_state.scores_submitted)
+        submit_button = st.button("Submit Scores", disabled=st.session_state.scores_submitted[round_number - 1])
 
         if submit_button:
             # Update scores based on input
@@ -128,10 +130,11 @@ with tabs[2]:
                     st.session_state.leaderboard[p2] += int(p2_score)
 
             st.success("Scores submitted successfully!")
-            st.session_state.scores_submitted = True  # Flag to disable Submit button for this round
+            st.session_state.scores_submitted[round_number - 1] = True  # Flag to disable Submit button for this round
 
     if st.button("Reset Rounds"):
         st.session_state.rounds = []
+        st.session_state.scores_submitted = [False] * 10  # Reset all rounds' submission states
 
 # --- Leaderboard Tab ---
 with tabs[3]:
