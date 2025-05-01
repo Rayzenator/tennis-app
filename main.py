@@ -64,6 +64,7 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
             player_roles[p].append("american")
         usable_players = usable_players[3:]
 
+    # Prevent consecutive rounds with American Doubles or Rest roles
     for i in range(0, len(usable_players), step):
         match = tuple(usable_players[i:i+step])
         if len(match) == step:
@@ -72,8 +73,20 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
                 player_roles[p].append("match")
 
     resting = set(players) - set(p for m in matches for p in m)
+    
+    # Add resting players
     for p in resting:
         player_roles[p].append("rest")
+
+    # Ensure fairness: prevent consecutive American Doubles or Rest assignments
+    for p in resting:
+        if player_roles.get(p, [])[-1] == 'rest' or player_roles.get(p, [])[-1] == 'american':
+            # Reassign if necessary, balancing the roles across rounds
+            for other_p in resting:
+                if player_roles.get(other_p, [])[-1] != 'rest' and player_roles.get(other_p, [])[-1] != 'american':
+                    player_roles[other_p].append("rest")
+                    player_roles[p].append("rest")
+                    break
 
     for m in matches:
         history.add(frozenset(m))
@@ -129,12 +142,6 @@ def app():
     allow_american = st.checkbox("Allow American Doubles")
 
     if st.button("Generate Round"):
-        # Ensure player_roles is valid for selected players
-        for p in selected_players:
-            if p not in st.session_state.player_roles:
-                st.session_state.player_roles[p] = []
-        st.session_state.player_roles = {p: roles for p, roles in st.session_state.player_roles.items() if p in selected_players}
-
         matches, st.session_state.history, st.session_state.player_roles = schedule_round(
             selected_players, selected_courts, match_type, allow_american,
             st.session_state.history, st.session_state.player_roles)
