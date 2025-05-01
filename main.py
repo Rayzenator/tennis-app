@@ -7,6 +7,7 @@ import pandas as pd
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+import time
 
 # Page configuration
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
@@ -67,7 +68,7 @@ def sidebar_management():
             if 'courts' not in st.session_state:
                 st.session_state.courts = load_data().get("courts", [])
             st.header("Courts")
-            new_court = st.text_input("Add Court", key=f"court_in_{st.session_state.get('round', 0)}")  # Unique key
+            new_court = st.text_input("Add Court", key=f"court_in_{int(time.time())}")  # Unique key with timestamp
             if st.button("Add Court") and new_court:
                 if new_court not in st.session_state.courts:
                     st.session_state.courts.append(new_court)
