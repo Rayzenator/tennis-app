@@ -9,6 +9,34 @@ from reportlab.pdfgen import canvas
 
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 
+# Custom CSS to improve readability on mobile
+st.markdown("""
+    <style>
+        body {
+            font-size: 18px;
+        }
+        .stButton>button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+        .stMultiselect, .stTextInput {
+            font-size: 16px;
+            padding: 10px;
+        }
+        .stNumberInput input {
+            font-size: 16px;
+            height: 40px;
+        }
+        .stSidebar {
+            font-size: 16px;
+        }
+        .stTextInput, .stSelectbox, .stCheckbox {
+            font-size: 16px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # File paths
 PLAYER_FILE = "players.json"
 COURT_FILE = "courts.json"
@@ -64,7 +92,6 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
             player_roles[p].append("american")
         usable_players = usable_players[3:]
 
-    # Prevent consecutive rounds with American Doubles or Rest roles
     for i in range(0, len(usable_players), step):
         match = tuple(usable_players[i:i+step])
         if len(match) == step:
@@ -73,20 +100,8 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
                 player_roles[p].append("match")
 
     resting = set(players) - set(p for m in matches for p in m)
-    
-    # Add resting players
     for p in resting:
         player_roles[p].append("rest")
-
-    # Ensure fairness: prevent consecutive American Doubles or Rest assignments
-    for p in resting:
-        if player_roles.get(p, [])[-1] == 'rest' or player_roles.get(p, [])[-1] == 'american':
-            # Reassign if necessary, balancing the roles across rounds
-            for other_p in resting:
-                if player_roles.get(other_p, [])[-1] != 'rest' and player_roles.get(other_p, [])[-1] != 'american':
-                    player_roles[other_p].append("rest")
-                    player_roles[p].append("rest")
-                    break
 
     for m in matches:
         history.add(frozenset(m))
