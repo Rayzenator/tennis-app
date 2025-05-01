@@ -30,9 +30,13 @@ if "selected_courts" not in st.session_state:
     st.session_state.selected_courts = st.session_state.courts.copy()
 if "rounds" not in st.session_state:
     st.session_state.rounds = []
+if "leaderboard" not in st.session_state:
+    st.session_state.leaderboard = {player: 0 for player in st.session_state.players}
+if "scores_submitted" not in st.session_state:
+    st.session_state.scores_submitted = False
 
 # UI Tabs
-tabs = st.tabs(["Courts", "Players", "Schedule"])
+tabs = st.tabs(["Courts", "Players", "Schedule", "Leaderboard"])
 
 # --- Courts Tab ---
 with tabs[0]:
@@ -84,7 +88,9 @@ with tabs[2]:
     st.write("Selected Players:", st.session_state.selected_players)
     st.write("Selected Courts:", st.session_state.selected_courts)
 
+    # Generate a round of matches
     if st.button("Generate First Round") or st.button("Generate Next Round"):
+        st.session_state.scores_submitted = False  # Reset score submission state
         round_number = len(st.session_state.rounds) + 1
         matches = generate_singles_matches(st.session_state.selected_players.copy(), st.session_state.selected_courts)
         st.session_state.rounds.append({
@@ -103,11 +109,39 @@ with tabs[2]:
         for i, (p1, p2) in enumerate(last_round["matches"]):
             col1, col2 = st.columns(2)
             with col1:
-                st.text_input(f"{p1}'s Score", key=f"score_{last_round['round']}_{i}_{p1}")
+                st.text_input(f"{p1}'s Score", key=f"score_{last_round['round']}_{i}_{p1}", value=0)
             with col2:
-                st.text_input(f"{p2}'s Score", key=f"score_{last_round['round']}_{i}_{p2}")
+                st.text_input(f"{p2}'s Score", key=f"score_{last_round['round']}_{i}_{p2}", value=0)
 
-        st.button("Submit Scores")
+        submit_button = st.button("Submit Scores", disabled=st.session_state.scores_submitted)
+
+        if submit_button:
+            # Update scores based on input
+            for i, (p1, p2) in enumerate(last_round["matches"]):
+                p1_score = st.session_state.get(f"score_{last_round['round']}_{i}_{p1}", 0)
+                p2_score = st.session_state.get(f"score_{last_round['round']}_{i}_{p2}", 0)
+                
+                # Update leaderboard based on games won
+                if p1_score and int(p1_score) > int(p2_score):
+                    st.session_state.leaderboard[p1] += int(p1_score)
+                elif p2_score and int(p2_score) > int(p1_score):
+                    st.session_state.leaderboard[p2] += int(p2_score)
+
+            st.success("Scores submitted successfully!")
+            st.session_state.scores_submitted = True  # Flag to disable Submit button for this round
 
     if st.button("Reset Rounds"):
         st.session_state.rounds = []
+
+# --- Leaderboard Tab ---
+with tabs[3]:
+    st.header("Leaderboard")
+    
+    # Sort leaderboard based on total games won
+    sorted_leaderboard = sorted(st.session_state.leaderboard.items(), key=lambda x: x[1], reverse=True)
+    
+    # Display leaderboard as a table
+    st.write("Top Players by Games Won:")
+    st.write("Player | Games Won")
+    for player, games_won in sorted_leaderboard:
+        st.write(f"{player} | {games_won}")
