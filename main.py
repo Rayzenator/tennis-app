@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import os
+import random
 
 # File paths
 PLAYER_FILE = "players.json"
@@ -67,6 +68,16 @@ with tabs[1]:
         save_list(PLAYER_FILE, st.session_state.players)
     st.write("Current Players:", st.session_state.players)
 
+# --- Helper: Generate Singles Matches ---
+def generate_singles_matches(players, courts):
+    random.shuffle(players)
+    matches = []
+    for i in range(min(len(courts), len(players) // 2)):
+        p1 = players[2 * i]
+        p2 = players[2 * i + 1]
+        matches.append((p1, p2))
+    return matches
+
 # --- Schedule Tab ---
 with tabs[2]:
     st.header("Schedule Matches")
@@ -74,29 +85,29 @@ with tabs[2]:
     st.write("Selected Courts:", st.session_state.selected_courts)
 
     if st.button("Generate First Round") or st.button("Generate Next Round"):
-        # Placeholder for scheduling logic
         round_number = len(st.session_state.rounds) + 1
+        matches = generate_singles_matches(st.session_state.selected_players.copy(), st.session_state.selected_courts)
         st.session_state.rounds.append({
             "round": round_number,
-            "matches": [("Player A", "Player B") for _ in st.session_state.selected_courts]
+            "matches": matches
         })
 
     if st.session_state.rounds:
         last_round = st.session_state.rounds[-1]
         st.subheader(f"Round {last_round['round']}")
-        
-        match_scores = {}
+
         for i, (p1, p2) in enumerate(last_round["matches"]):
             st.markdown(f"**Court {i+1}: {p1} vs {p2}**")
+
+        st.text("Enter Scores")
+        for i, (p1, p2) in enumerate(last_round["matches"]):
             col1, col2 = st.columns(2)
             with col1:
-                score1 = st.text_input(f"{p1}'s Score", key=f"score_{last_round['round']}_{i}_{p1}")
+                st.text_input(f"{p1}'s Score", key=f"score_{last_round['round']}_{i}_{p1}")
             with col2:
-                score2 = st.text_input(f"{p2}'s Score", key=f"score_{last_round['round']}_{i}_{p2}")
-            match_scores[(p1, p2)] = (score1, score2)
+                st.text_input(f"{p2}'s Score", key=f"score_{last_round['round']}_{i}_{p2}")
 
-        if st.button("Submit Scores"):
-            st.success("Scores submitted!")  # You can store the scores in rounds later if needed
+        st.button("Submit Scores")
 
     if st.button("Reset Rounds"):
         st.session_state.rounds = []
