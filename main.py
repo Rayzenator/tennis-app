@@ -1,216 +1,131 @@
 import streamlit as st
-import random
 import json
 import os
-from collections import defaultdict
 import pandas as pd
-from io import BytesIO
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-import time
+import random
 
-# Page configuration
-st.set_page_config(page_title="Tennis Scheduler", layout="wide")
-
-# Dark Mode Styling
-st.markdown(
-    """
-    <style>
-    body { background-color: #1e1e1e; color: white; }
-    .sidebar .sidebar-content { background-color: #2e2e2e; color: white; }
-    .stButton>button {
-        font-size: 24px !important;
-        padding: 14px 24px !important;
-        border-radius: 12px !important;
-        color: #FFFFFF !important;
-        background-color: #007BFF !important;
-        border: none;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Data persistence file paths
-DATA_FILE = "data.json"
-SCORES_FILE = 'scores.json'
-
-# Load or initialize scores data
-def load_scores():
-    if os.path.exists(SCORES_FILE):
-        with open(SCORES_FILE, 'r') as file:
-            return json.load(file)
-    else:
-        return {}
-
-def save_scores(scores):
-    with open(SCORES_FILE, 'w') as file:
-        json.dump(scores, file)
-
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
+def load_json(path, default=[]):
+    if os.path.exists(path):
+        with open(path, 'r') as f:
             return json.load(f)
-    return {"courts": [], "players": []}
+    return default
 
-def save_data():
-    with open(DATA_FILE, 'w') as f:
-        json.dump({"courts": st.session_state.courts,
-                   "players": st.session_state.players}, f)
+def save_json(path, data):
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
 
-# Sidebar management
-def sidebar_management():
-    with st.sidebar:
-        tab1, tab2, tab3 = st.tabs(["Courts", "Players", "Leaderboard"])
+def load_players():
+    return load_json('players.json')
 
-        # Tab 1 - Courts
-        with tab1:
-            if 'courts' not in st.session_state:
-                st.session_state.courts = load_data().get("courts", [])
-            if 'court_counter' not in st.session_state:
-                st.session_state.court_counter = 0
-            st.header("Courts")
+def save_players(players):
+    save_json('players.json', players)
 
-            court_key = f"court_in_{st.session_state.court_counter}"
-            new_court = st.text_input("Add Court", key=court_key)
+def load_courts():
+    return load_json('courts.json')
 
-            if st.button("Add Court") and new_court:
-                if new_court not in st.session_state.courts:
-                    st.session_state.courts.append(new_court)
-                    save_data()
-                else:
-                    st.warning("Court already exists.")
-                st.session_state.court_counter += 1
+def save_courts(courts):
+    save_json('courts.json', courts)
 
-            if st.button("Reset Courts"):
-                st.session_state.courts = []
-                save_data()
+def load_all_time_scores():
+    if os.path.exists('scores.csv'):
+        return pd.read_csv('scores.csv', index_col=0)
+    return pd.DataFrame(columns=['games'])
 
-            for i, court in enumerate(st.session_state.courts):
-                st.write(court)
-                if st.button(f"❌ Remove {court}", key=f"rm_court_{i}"):
-                    st.session_state.courts.pop(i)
-                    save_data()
+def save_all_time_scores(df):
+    df.to_csv('scores.csv')
 
-        # Tab 2 - Players
-        with tab2:
-            if 'players' not in st.session_state:
-                st.session_state.players = load_data().get("players", [])
-            st.header("Players")
-            new_player = st.text_input("Add Player", key="player_in")
-            if st.button("Add Player") and new_player:
-                if new_player not in st.session_state.players:
-                    st.session_state.players.append(new_player)
-                    save_data()
-                else:
-                    st.warning("Player already exists.")
-            if st.button("Reset Players"):
-                st.session_state.players = []
-                save_data()
-
-            for i, player in enumerate(st.session_state.players):
-                st.write(player)
-                if st.button(f"❌ Remove {player}", key=f"rm_player_{i}"):
-                    st.session_state.players.pop(i)
-                    save_data()
-
-        # Tab 3 - Leaderboard
-        with tab3:
-            player_scores = load_scores()
-            sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
-            st.write("### Leaderboard")
-            for i, (player, score) in enumerate(sorted_scores, start=1):
-                st.write(f"{i}. {player}: {score} points")
-
-            if st.button("Delete All Player Scores"):
-                delete_all_scores()
-
-def delete_all_scores():
-    save_scores({})
-    st.success("All player scores have been deleted.")
-
-def update_scores(current_scores, players, new_scores):
-    for player in players:
-        current_scores[player] = current_scores.get(player, 0) + new_scores.get(player, 0)
-    return current_scores
-
-def match_results(players):
-    st.write("### Enter Scores for Each Player")
-    player_scores = {}
-    for player in players:
-        score = st.number_input(f"Score for {player}", min_value=0, value=0, key=f"score_{player}_{time.time()}")
-        player_scores[player] = score
-    if st.button(f"Submit Scores for {' & '.join(players)}", key=f"submit_{'_'.join(players)}"):
-        scores = load_scores()
-        updated = update_scores(scores, players, player_scores)
-        save_scores(updated)
-        st.success("Scores submitted!")
-        st.experimental_rerun()
-
-# Export helpers
-def generate_pdf(matches, rnd):
-    buf = BytesIO()
-    c = canvas.Canvas(buf, pagesize=letter)
-    w, h = letter
-    y = h - 40
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, y, f"Tennis Schedule - Round {rnd}")
-    y -= 30
-    c.setFont("Helvetica", 12)
-    for court, pts in matches:
-        c.drawString(50, y, f"Court {court}: {' vs '.join(pts)}")
-        y -= 20
-        if y < 50:
-            c.showPage()
-            y = h - 40
-    c.save()
-    buf.seek(0)
-    return buf
-
-def generate_csv(matches):
-    df = pd.DataFrame([(c, ', '.join(players)) for c, players in matches], columns=["Court", "Players"])
-    buf = BytesIO()
-    df.to_csv(buf, index=False)
-    buf.seek(0)
-    return buf
-
-def schedule_matches():
-    st.title("🎾 Tennis Match Scheduler")
-
-    if 'courts' not in st.session_state or 'players' not in st.session_state:
-        st.warning("Please add courts and players from the sidebar.")
-        return
-
-    courts = st.session_state.courts
-    players = st.session_state.players.copy()
-    num_courts = len(courts)
-
-    if num_courts == 0 or len(players) < 2:
-        st.warning("At least one court and two players are required.")
-        return
-
-    random.shuffle(players)
+def schedule_round(players, courts, match_type='Singles', allow_american=False, history=None):
+    if history is None:
+        history = set()
     matches = []
+    players = players.copy()
+    random.shuffle(players)
 
-    while len(players) >= 2 and len(matches) < num_courts:
-        p1 = players.pop()
-        p2 = players.pop()
-        matches.append((courts[len(matches)], [p1, p2]))
+    if match_type == 'Singles' and allow_american and len(players) % 2 != 0:
+        matches.append(tuple(players[:3]))
+        players = players[3:]
 
-    rnd = st.number_input("Round Number", min_value=1, value=1)
+    court_capacity = 2 if match_type == 'Singles' else 4
+    max_players = len(courts) * court_capacity
+    players = players[:max_players]
 
-    for court, match_players in matches:
-        st.subheader(f"Court: {court}")
-        st.write(" vs ".join(match_players))
-        match_results(match_players)
+    step = 2 if match_type == 'Singles' else 4
+    for i in range(0, len(players), step):
+        match = tuple(players[i:i+step])
+        if len(match) == step:
+            matches.append(match)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        pdf_buf = generate_pdf(matches, rnd)
-        st.download_button("Download PDF", data=pdf_buf, file_name=f"tennis_schedule_round_{rnd}.pdf")
-    with col2:
-        csv_buf = generate_csv(matches)
-        st.download_button("Download CSV", data=csv_buf, file_name=f"tennis_schedule_round_{rnd}.csv", mime="text/csv")
+    for m in matches:
+        history.add(frozenset(m))
+    return matches, history
 
-sidebar_management()
-schedule_matches()
+def update_scores(nightly, all_time, match, scores):
+    for idx, player in enumerate(match):
+        nightly.at[player, 'games'] = nightly.get(player, {}).get('games', 0) + scores[idx]
+        if player not in all_time.index:
+            all_time.loc[player] = 0
+        all_time.at[player, 'games'] += scores[idx]
+
+def app():
+    st.set_page_config(page_title="Tennis Scheduler", layout="wide")
+    st.title("🎾 Tennis Night Round-Robin Scheduler")
+
+    players = load_players()
+    courts = load_courts()
+    all_time = load_all_time_scores()
+
+    st.sidebar.header("Manage Players & Courts")
+    new_player = st.sidebar.text_input("Add Player")
+    if st.sidebar.button("Add Player") and new_player:
+        players.append(new_player)
+        save_players(players)
+
+    new_court = st.sidebar.text_input("Add Court")
+    if st.sidebar.button("Add Court") and new_court:
+        courts.append(new_court)
+        save_courts(courts)
+
+    selected_players = st.multiselect("Select Players Playing Tonight", players)
+    selected_courts = st.multiselect("Select Active Courts", courts)
+    match_type = st.selectbox("Match Type", ["Singles", "Doubles"])
+    match_format = st.selectbox("Format", ["Fast Four", "Timed"])
+    allow_american = st.checkbox("Use American Doubles if Odd Singles")
+
+    # Initialize session state
+    if 'nightly' not in st.session_state:
+        st.session_state.nightly = pd.DataFrame(0, index=selected_players, columns=['games'])
+    if 'history' not in st.session_state:
+        st.session_state.history = set()
+
+    if st.button("Generate Round"):
+        matches, st.session_state.history = schedule_round(
+            selected_players, selected_courts, match_type, allow_american, st.session_state.history)
+        st.session_state.matches = matches
+
+    if 'matches' in st.session_state:
+        st.subheader("Scheduled Matches")
+        for i, match in enumerate(st.session_state.matches):
+            st.write(f"Court {i+1}: {', '.join(match)}")
+            score_inputs = [st.number_input(f"Games won by {p}", min_value=0, key=f"{i}_{p}") for p in match]
+            if st.button(f"Submit Score for Match {i}"):
+                update_scores(st.session_state.nightly, all_time, match, score_inputs)
+                save_all_time_scores(all_time)
+
+    st.subheader("🎯 Nightly Leaderboard")
+    st.dataframe(st.session_state.nightly.sort_values("games", ascending=False))
+
+    st.subheader("🏆 All-Time Leaderboard")
+    st.dataframe(all_time.sort_values("games", ascending=False))
+
+    if st.button("Export All-Time Leaderboard to CSV"):
+        all_time.to_csv("all_time_leaderboard.csv")
+        st.success("Exported to all_time_leaderboard.csv")
+
+    if st.button("Reset Night"):
+        st.session_state.nightly = pd.DataFrame(0, index=players, columns=['games'])
+        st.session_state.history = set()
+        st.session_state.matches = []
+        st.success("Nightly stats cleared.")
+
+if __name__ == '__main__':
+    app()
