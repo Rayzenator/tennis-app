@@ -122,11 +122,17 @@ def app():
                     score = st.number_input(f"{player} score", min_value=0, key=f"r{round_info['round']}_{player}")
                     round_info['scores'][player] = score
 
-        if st.button(f"Submit Scores for Round {round_info['round']}"):
-            update_scores(st.session_state.nightly, all_time, round_info['scores'])
-            save_scores(all_time)
-            st.success(f"Scores for Round {round_info['round']} submitted.")
-
+        col_submit, col_reset = st.columns([2, 1])
+        with col_submit:
+            if st.button(f"Submit Scores for Round {round_info['round']}", key=f"submit_{round_info['round']}"):
+                update_scores(st.session_state.nightly, all_time, round_info['scores'])
+                save_scores(all_time)
+                st.success(f"Scores for Round {round_info['round']} submitted.")
+        with col_reset:
+            if st.button(f"Reset Round {round_info['round']}", key=f"reset_{round_info['round']}"):
+                st.session_state.rounds = [r for r in st.session_state.rounds if r['round'] != round_info['round']]
+                st.success(f"Round {round_info['round']} has been reset.")
+                st.experimental_rerun()
     st.subheader("🎯 Nightly Leaderboard")
     st.dataframe(st.session_state.nightly.sort_values("games", ascending=False))
 
