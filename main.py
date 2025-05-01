@@ -84,14 +84,19 @@ with tabs[2]:
     if st.session_state.rounds:
         last_round = st.session_state.rounds[-1]
         st.subheader(f"Round {last_round['round']}")
-        for i, match in enumerate(last_round["matches"]):
-            st.write(f"Court {i+1}: {match[0]} vs {match[1]}")
+        
+        match_scores = {}
+        for i, (p1, p2) in enumerate(last_round["matches"]):
+            st.markdown(f"**Court {i+1}: {p1} vs {p2}**")
+            col1, col2 = st.columns(2)
+            with col1:
+                score1 = st.text_input(f"{p1}'s Score", key=f"score_{last_round['round']}_{i}_{p1}")
+            with col2:
+                score2 = st.text_input(f"{p2}'s Score", key=f"score_{last_round['round']}_{i}_{p2}")
+            match_scores[(p1, p2)] = (score1, score2)
 
-        st.text("Enter Scores")
-        for i, match in enumerate(last_round["matches"]):
-            st.text_input(f"Score for Court {i+1} ({match[0]} vs {match[1]})", key=f"score_{last_round['round']}_{i}")
-
-        st.button("Submit Scores")
+        if st.button("Submit Scores"):
+            st.success("Scores submitted!")  # You can store the scores in rounds later if needed
 
     if st.button("Reset Rounds"):
         st.session_state.rounds = []
