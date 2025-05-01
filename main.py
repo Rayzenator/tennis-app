@@ -34,6 +34,14 @@ def save_scores(df):
     df.to_csv(SCORE_FILE)
 
 # Scheduler logic
+# Ensure player_roles has all selected players
+for p in selected_players:
+    if p not in st.session_state.player_roles:
+        st.session_state.player_roles[p] = []
+
+# Remove roles of players not playing tonight
+st.session_state.player_roles = {p: roles for p, roles in st.session_state.player_roles.items() if p in selected_players}
+
 def schedule_round(players, courts, match_type='Singles', allow_american=False, history=None, player_roles=None):
     if history is None:
         history = set()
