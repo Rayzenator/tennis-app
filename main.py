@@ -57,47 +57,6 @@ def save_data():
     with open(DATA_FILE, 'w') as f:
         json.dump({"courts": st.session_state.courts,
                    "players": st.session_state.players}, f)
-####################
-def schedule_matches():
-    st.title("🎾 Tennis Match Scheduler")
-
-    if 'courts' not in st.session_state or 'players' not in st.session_state:
-        st.warning("Please add courts and players from the sidebar.")
-        return
-
-    courts = st.session_state.courts
-    players = st.session_state.players
-    num_courts = len(courts)
-
-    if num_courts == 0 or len(players) < 2:
-        st.warning("At least one court and two players are required.")
-        return
-
-    random.shuffle(players)
-    matches = []
-
-    while len(players) >= 2 and len(matches) < num_courts:
-        p1 = players.pop()
-        p2 = players.pop()
-        matches.append((courts[len(matches)], [p1, p2]))
-
-    rnd = st.number_input("Round Number", min_value=1, value=1)
-
-    for court, match_players in matches:
-        st.subheader(f"Court: {court}")
-        st.write(" vs ".join(match_players))
-        match_results(match_players)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        pdf_buf = generate_pdf(matches, rnd)
-        st.download_button("Download PDF", data=pdf_buf, file_name=f"tennis_schedule_round_{rnd}.pdf")
-    with col2:
-        csv_buf = generate_csv(matches)
-        st.download_button("Download CSV", data=csv_buf, file_name=f"tennis_schedule_round_{rnd}.csv", mime="text/csv")
-
-##################
-
 
 # Sidebar management
 def sidebar_management():
@@ -213,8 +172,43 @@ def generate_csv(matches):
     buf.seek(0)
     return buf
 
-# Schedule logic (already updated with your fixes)
-# ... (omitted here for brevity but it's been inserted above)
+def schedule_matches():
+    st.title("🎾 Tennis Match Scheduler")
+
+    if 'courts' not in st.session_state or 'players' not in st.session_state:
+        st.warning("Please add courts and players from the sidebar.")
+        return
+
+    courts = st.session_state.courts
+    players = st.session_state.players.copy()
+    num_courts = len(courts)
+
+    if num_courts == 0 or len(players) < 2:
+        st.warning("At least one court and two players are required.")
+        return
+
+    random.shuffle(players)
+    matches = []
+
+    while len(players) >= 2 and len(matches) < num_courts:
+        p1 = players.pop()
+        p2 = players.pop()
+        matches.append((courts[len(matches)], [p1, p2]))
+
+    rnd = st.number_input("Round Number", min_value=1, value=1)
+
+    for court, match_players in matches:
+        st.subheader(f"Court: {court}")
+        st.write(" vs ".join(match_players))
+        match_results(match_players)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        pdf_buf = generate_pdf(matches, rnd)
+        st.download_button("Download PDF", data=pdf_buf, file_name=f"tennis_schedule_round_{rnd}.pdf")
+    with col2:
+        csv_buf = generate_csv(matches)
+        st.download_button("Download CSV", data=csv_buf, file_name=f"tennis_schedule_round_{rnd}.csv", mime="text/csv")
 
 sidebar_management()
 schedule_matches()
