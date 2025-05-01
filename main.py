@@ -73,7 +73,9 @@ def app():
 
     players = load_json(PLAYER_FILE)
     courts = load_json(COURT_FILE)
-    all_time = load_scores()
+
+    if 'all_time' not in st.session_state:
+        st.session_state.all_time = load_scores()
 
     if 'nightly' not in st.session_state:
         st.session_state.nightly = pd.DataFrame(0, index=players, columns=['games'])
@@ -122,25 +124,19 @@ def app():
                     score = st.number_input(f"{player} score", min_value=0, key=f"r{round_info['round']}_{player}")
                     round_info['scores'][player] = score
 
-        col_submit, col_reset = st.columns([2, 1])
-        with col_submit:
-            if st.button(f"Submit Scores for Round {round_info['round']}", key=f"submit_{round_info['round']}"):
-                update_scores(st.session_state.nightly, all_time, round_info['scores'])
-                save_scores(all_time)
-                st.success(f"Scores for Round {round_info['round']} submitted.")
-        with col_reset:
-            if st.button(f"Reset Round {round_info['round']}", key=f"reset_{round_info['round']}"):
-                st.session_state.rounds = [r for r in st.session_state.rounds if r['round'] != round_info['round']]
-                st.success(f"Round {round_info['round']} has been reset.")
-                st.experimental_rerun()
+        if st.button(f"Submit Scores for Round {round_info['round']}"):
+            update_scores(st.session_state.nightly, st.session_state.all_time, round_info['scores'])
+            save_scores(st.session_state.all_time)
+            st.success(f"Scores for Round {round_info['round']} submitted.")
+
     st.subheader("🎯 Nightly Leaderboard")
     st.dataframe(st.session_state.nightly.sort_values("games", ascending=False))
 
     st.subheader("🏆 All-Time Leaderboard")
-    st.dataframe(all_time.sort_values("games", ascending=False))
+    st.dataframe(st.session_state.all_time.sort_values("games", ascending=False))
 
     if st.button("Export Leaderboard to CSV"):
-        all_time.to_csv("all_time_leaderboard.csv")
+        st.session_state.all_time.to_csv("all_time_leaderboard.csv")
         st.success("Exported to all_time_leaderboard.csv")
 
     if st.button("Reset Night"):
@@ -150,15 +146,14 @@ def app():
         st.session_state.round_number = 1
         st.success("Nightly session reset.")
 
-    # Reset All-Time Leaderboard
     with st.expander("⚠️ Danger Zone: All-Time Leaderboard"):
         if st.button("Delete All-Time Leaderboard"):
             if st.checkbox("Are you sure? This cannot be undone."):
                 if os.path.exists(SCORE_FILE):
                     os.remove(SCORE_FILE)
-                all_time.drop(all_time.index, inplace=True)
-                save_scores(all_time)
+                st.session_state.all_time = pd.DataFrame(columns=['games'])
+                save_scores(st.session_state.all_time)
                 st.success("All-Time Leaderboard has been deleted.")
-                
+
 if __name__ == '__main__':
     app()
