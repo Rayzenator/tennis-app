@@ -34,36 +34,52 @@ def save_scores(df):
     df.to_csv(SCORE_FILE)
 
 # Scheduler logic
-def schedule_round(players, courts, match_type='Singles', allow_american=False, history=None):
+def schedule_round(players, courts, match_type='Singles', allow_american=False, history=None, player_roles=None):
     if history is None:
         history = set()
+    if player_roles is None:
+        player_roles = {p: [] for p in players}
+
     matches = []
     players = players.copy()
-    random.shuffle(players)
 
-    if match_type == 'Singles' and allow_american and len(players) % 2 != 0:
-        matches.append(tuple(players[:3]))
-        players = players[3:]
+    def penalty(p):
+        recent = player_roles.get(p, [])
+        return recent[-1:] == ['rest'] or recent[-1:] == ['american']
+
+    players.sort(key=penalty)
+    random.shuffle(players)
 
     court_capacity = 2 if match_type == 'Singles' else 4
     max_players = len(courts) * court_capacity
-    players = players[:max_players]
+    usable_players = players[:max_players]
 
     step = 2 if match_type == 'Singles' else 4
-    for i in range(0, len(players), step):
-        match = tuple(players[i:i+step])
+    leftover_players = players[max_players:]
+
+    if match_type == 'Singles' and allow_american and len(usable_players) % 2 != 0:
+        american = usable_players[:3]
+        matches.append(tuple(american))
+        for p in american:
+            player_roles[p].append("american")
+        usable_players = usable_players[3:]
+
+    for i in range(0, len(usable_players), step):
+        match = tuple(usable_players[i:i+step])
         if len(match) == step:
             matches.append(match)
+            for p in match:
+                player_roles[p].append("match")
+
+    resting = set(players) - set(p for m in matches for p in m)
+    for p in resting:
+        player_roles[p].append("rest")
 
     for m in matches:
         history.add(frozenset(m))
 
-    # Assign matches in order of courts
-    named_matches = []
-    for court, match in zip(courts, matches):
-        named_matches.append((court, match))
-
-    return named_matches, history
+    named_matches = [(court, match) for court, match in zip(courts, matches)]
+    return named_matches, history, player_roles
 
 def update_scores(nightly_df, all_time_df, submitted_scores):
     for player, score in submitted_scores.items():
@@ -91,6 +107,8 @@ def app():
         st.session_state.rounds = []
     if 'round_number' not in st.session_state:
         st.session_state.round_number = 1
+    if 'player_roles' not in st.session_state:
+        st.session_state.player_roles = {p: [] for p in players}
 
     with st.sidebar:
         st.header("Manage Players & Courts")
@@ -111,8 +129,10 @@ def app():
     allow_american = st.checkbox("Allow American Doubles")
 
     if st.button("Generate Round"):
-        matches, st.session_state.history = schedule_round(
-            selected_players, selected_courts, match_type, allow_american, st.session_state.history)
+        matches, st.session_state.history, st.session_state.player_roles = schedule_round(
+            selected_players, selected_courts, match_type, allow_american,
+            st.session_state.history, st.session_state.player_roles)
+
         st.session_state.rounds.append({
             'round': st.session_state.round_number,
             'matches': matches,
@@ -150,6 +170,7 @@ def app():
         st.session_state.history = set()
         st.session_state.rounds = []
         st.session_state.round_number = 1
+        st.session_state.player_roles = {p: [] for p in players}
         st.success("Nightly session reset.")
 
     with st.expander("⚠️ Danger Zone: All-Time Leaderboard"):
