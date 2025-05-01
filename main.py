@@ -30,12 +30,8 @@ if "selected_courts" not in st.session_state:
     st.session_state.selected_courts = st.session_state.courts.copy()
 if "rounds" not in st.session_state:
     st.session_state.rounds = []
-if "leaderboard" not in st.session_state:
-    st.session_state.leaderboard = {player: 0 for player in st.session_state.players}
-if "scores_submitted" not in st.session_state:
-    st.session_state.scores_submitted = [False] * 10  # Assuming max 10 rounds for now
-if "current_round_index" not in st.session_state:
-    st.session_state.current_round_index = 0
+if "current_round" not in st.session_state:
+    st.session_state.current_round = 0  # Keep track of the current round index
 
 # UI Tabs
 tabs = st.tabs(["Courts", "Players", "Schedule", "Leaderboard"])
@@ -74,7 +70,7 @@ with tabs[1]:
         save_list(PLAYER_FILE, st.session_state.players)
     st.write("Current Players:", st.session_state.players)
 
-# --- Helper: Generate Singles Matches ---
+# --- Helper: Generate Matches ---
 def generate_singles_matches(players, courts):
     random.shuffle(players)
     matches = []
@@ -85,98 +81,63 @@ def generate_singles_matches(players, courts):
     return matches
 
 # --- Schedule Tab ---
-# Ensure round_number is correctly set
-if "rounds" not in st.session_state:
-    st.session_state.rounds = []
-
-# Generate round number
-round_number = len(st.session_state.rounds) + 1  # this should be defined first
-if round_number > 1:
-    # your logic to check for consecutive rounds
-    pass
-
 with tabs[2]:
     st.header("Schedule Matches")
     st.write("Selected Players:", st.session_state.selected_players)
     st.write("Selected Courts:", st.session_state.selected_courts)
 
-    # Generate first round if no rounds exist
-    if not st.session_state.rounds:
+    if st.session_state.current_round == 0:  # First round
         if st.button("Generate First Round"):
-            round_number = 1
+            round_number = len(st.session_state.rounds) + 1
             matches = generate_singles_matches(st.session_state.selected_players.copy(), st.session_state.selected_courts)
             st.session_state.rounds.append({
                 "round": round_number,
                 "matches": matches
             })
-    else:
-        round_number = len(st.session_state.rounds)
-        current_round = st.session_state.rounds[st.session_state.current_round_index]
+            st.session_state.current_round += 1
+    else:  # After the first round
+        if st.button("Generate Next Round"):
+            round_number = len(st.session_state.rounds) + 1
+            matches = generate_singles_matches(st.session_state.selected_players.copy(), st.session_state.selected_courts)
+            st.session_state.rounds.append({
+                "round": round_number,
+                "matches": matches
+            })
+            st.session_state.current_round += 1
 
-        # Round navigation buttons
-        prev_round = st.button("Previous Round", disabled=st.session_state.current_round_index == 0)
-        next_round = st.button("Next Round", disabled=st.session_state.current_round_index == len(st.session_state.rounds) - 1)
+    # Display current round and navigation buttons
+    if st.session_state.current_round > 0:
+        current_round_data = st.session_state.rounds[st.session_state.current_round - 1]
+        st.subheader(f"Round {current_round_data['round']}")
 
-        if prev_round:
-            st.session_state.current_round_index -= 1
-        elif next_round:
-            st.session_state.current_round_index += 1
-
-        # Display current round
-        current_round = st.session_state.rounds[st.session_state.current_round_index]
-        st.subheader(f"Round {current_round['round']}")
-
-        for i, (p1, p2) in enumerate(current_round["matches"]):
+        for i, (p1, p2) in enumerate(current_round_data["matches"]):
             st.markdown(f"**Court {i+1}: {p1} vs {p2}**")
 
+        # Submit scores section
         st.text("Enter Scores")
-        for i, (p1, p2) in enumerate(current_round["matches"]):
+        for i, (p1, p2) in enumerate(current_round_data["matches"]):
             col1, col2 = st.columns(2)
             with col1:
-                st.text_input(f"{p1}'s Score", key=f"score_{current_round['round']}_{i}_{p1}", value=0)
+                st.text_input(f"{p1}'s Score", key=f"score_{current_round_data['round']}_{i}_{p1}")
             with col2:
-                st.text_input(f"{p2}'s Score", key=f"score_{current_round['round']}_{i}_{p2}", value=0)
+                st.text_input(f"{p2}'s Score", key=f"score_{current_round_data['round']}_{i}_{p2}")
 
-        submit_button = st.button("Submit Scores", disabled=st.session_state.scores_submitted[st.session_state.current_round_index])
+        # Submit scores button (disabled if scores have been submitted)
+        if st.button("Submit Scores"):
+            st.session_state.rounds[st.session_state.current_round - 1]["scores_submitted"] = True
 
-        if submit_button:
-            # Update scores based on input
-            for i, (p1, p2) in enumerate(current_round["matches"]):
-                p1_score = st.session_state.get(f"score_{current_round['round']}_{i}_{p1}", 0)
-                p2_score = st.session_state.get(f"score_{current_round['round']}_{i}_{p2}", 0)
-                
-                # Update leaderboard based on games won
-                if p1_score and int(p1_score) > int(p2_score):
-                    st.session_state.leaderboard[p1] += int(p1_score)
-                elif p2_score and int(p2_score) > int(p1_score):
-                    st.session_state.leaderboard[p2] += int(p2_score)
+        # Navigation buttons for rounds
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.session_state.current_round > 1:
+                if st.button("Previous Round"):
+                    st.session_state.current_round -= 1
+        with col2:
+            if st.session_state.current_round < len(st.session_state.rounds):
+                if st.button("Next Round"):
+                    st.session_state.current_round += 1
 
-            st.success("Scores submitted successfully!")
-            st.session_state.scores_submitted[st.session_state.current_round_index] = True  # Flag to disable Submit button for this round
-
-    # Generate next round button
-    if round_number > 1:
-        if st.button("Generate Next Round"):
-            round_number += 1
-            matches = generate_singles_matches(st.session_state.selected_players.copy(), st.session_state.selected_courts)
-            st.session_state.rounds.append({
-                "round": round_number,
-                "matches": matches
-            })
-
+    # Reset rounds button
     if st.button("Reset Rounds"):
         st.session_state.rounds = []
-        st.session_state.scores_submitted = [False] * 10  # Reset all rounds' submission states
-
-# --- Leaderboard Tab ---
-with tabs[3]:
-    st.header("Leaderboard")
-    
-    # Sort leaderboard based on total games won
-    sorted_leaderboard = sorted(st.session_state.leaderboard.items(), key=lambda x: x[1], reverse=True)
-    
-    # Display leaderboard as a table
-    st.write("Top Players by Games Won:")
-    st.write("Player | Games Won")
-    for player, games_won in sorted_leaderboard:
-        st.write(f"{player} | {games_won}")
+        st.session_state.current_round = 0
