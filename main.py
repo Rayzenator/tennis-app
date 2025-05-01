@@ -9,11 +9,12 @@ from reportlab.pdfgen import canvas
 
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 
-# Custom CSS to improve readability on mobile
+# Apply CSS for mobile optimization
 st.markdown("""
     <style>
         body {
             font-size: 18px;
+            line-height: 1.6;
         }
         .stButton>button {
             padding: 12px 24px;
@@ -33,6 +34,15 @@ st.markdown("""
         }
         .stTextInput, .stSelectbox, .stCheckbox {
             font-size: 16px;
+        }
+        .stMultiSelect, .stSelectbox {
+            font-size: 16px;
+        }
+        .stMarkdown {
+            font-size: 16px;
+        }
+        .stTextInput input {
+            padding: 10px;
         }
     </style>
 """, unsafe_allow_html=True)
