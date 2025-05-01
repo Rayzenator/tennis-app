@@ -1,212 +1,97 @@
 import streamlit as st
 import json
-from fpdf import FPDF
+import os
 
-# Load and save data functions
-def load_data():
-    try:
-        with open('data.json', 'r') as f:
+# File paths
+PLAYER_FILE = "players.json"
+COURT_FILE = "courts.json"
+
+# Load players and courts from JSON
+def load_list(file_path, default=[]):
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
             return json.load(f)
-    except FileNotFoundError:
-        return {"players": [], "courts": []}
+    return default
 
-def save_data():
-    with open('data.json', 'w') as f:
-        json.dump({"players": st.session_state.players, "courts": st.session_state.courts}, f)
+# Save players and courts to JSON
+def save_list(file_path, data):
+    with open(file_path, "w") as f:
+        json.dump(data, f)
 
-def load_scores():
-    try:
-        with open('scores.json', 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
+# Initialize session state
+if "players" not in st.session_state:
+    st.session_state.players = load_list(PLAYER_FILE)
+if "courts" not in st.session_state:
+    st.session_state.courts = load_list(COURT_FILE)
+if "selected_players" not in st.session_state:
+    st.session_state.selected_players = st.session_state.players.copy()
+if "selected_courts" not in st.session_state:
+    st.session_state.selected_courts = st.session_state.courts.copy()
+if "rounds" not in st.session_state:
+    st.session_state.rounds = []
 
-def save_scores(scores):
-    with open('scores.json', 'w') as f:
-        json.dump(scores, f)
+# UI Tabs
+tabs = st.tabs(["Courts", "Players", "Schedule"])
 
-# Sidebar management
-def sidebar_management():
-    with st.sidebar:
-        tab1, tab2, tab3 = st.tabs(["Courts", "Players", "Leaderboard"])
+# --- Courts Tab ---
+with tabs[0]:
+    st.header("Courts")
+    st.session_state.selected_courts = st.multiselect(
+        "Select Courts for Tonight",
+        st.session_state.courts,
+        default=st.session_state.selected_courts,
+    )
+    court_input = st.text_input("Add a new court")
+    if st.button("Add Court") and court_input:
+        st.session_state.courts.append(court_input)
+        save_list(COURT_FILE, st.session_state.courts)
+    if st.button("Reset Courts"):
+        st.session_state.courts.clear()
+        save_list(COURT_FILE, st.session_state.courts)
+    st.write("Current Courts:", st.session_state.courts)
 
-        # Tab 1 - Courts
-        with tab1:
-            if 'courts' not in st.session_state:
-                st.session_state.courts = load_data().get("courts", [])
-            st.header("Courts")
-            new_court = st.text_input("Add Court", key="court_in")
-            if st.button("Add Court") and new_court:
-                if new_court not in st.session_state.courts:
-                    st.session_state.courts.append(new_court)
-                    save_data()
-                else:
-                    st.warning("Court already exists.")
-            if st.button("Reset Courts"):
-                st.session_state.courts = []
-                save_data()
+# --- Players Tab ---
+with tabs[1]:
+    st.header("Players")
+    st.session_state.selected_players = st.multiselect(
+        "Select Players for Tonight",
+        st.session_state.players,
+        default=st.session_state.selected_players,
+    )
+    player_input = st.text_input("Add a new player")
+    if st.button("Add Player") and player_input:
+        st.session_state.players.append(player_input)
+        save_list(PLAYER_FILE, st.session_state.players)
+    if st.button("Reset Players"):
+        st.session_state.players.clear()
+        save_list(PLAYER_FILE, st.session_state.players)
+    st.write("Current Players:", st.session_state.players)
 
-            # Display Courts
-            for i, court in enumerate(st.session_state.courts):
-                st.write(court)
-                if st.button(f"❌ Remove {court}", key=f"rm_court_{i}"):
-                    st.session_state.courts.pop(i)
-                    save_data()
+# --- Schedule Tab ---
+with tabs[2]:
+    st.header("Schedule Matches")
+    st.write("Selected Players:", st.session_state.selected_players)
+    st.write("Selected Courts:", st.session_state.selected_courts)
 
-        # Tab 2 - Players
-        with tab2:
-            if 'players' not in st.session_state:
-                st.session_state.players = load_data().get("players", [])
-            st.header("Players")
-            new_player = st.text_input("Add Player", key="player_in")
-            if st.button("Add Player") and new_player:
-                if new_player not in st.session_state.players:
-                    st.session_state.players.append(new_player)
-                    save_data()
-                else:
-                    st.warning("Player already exists.")
-            if st.button("Reset Players"):
-                st.session_state.players = []
-                save_data()
+    if st.button("Generate First Round") or st.button("Generate Next Round"):
+        # Placeholder for scheduling logic
+        round_number = len(st.session_state.rounds) + 1
+        st.session_state.rounds.append({
+            "round": round_number,
+            "matches": [("Player A", "Player B") for _ in st.session_state.selected_courts]
+        })
 
-            # Display Players
-            for i, player in enumerate(st.session_state.players):
-                st.write(player)
-                if st.button(f"❌ Remove {player}", key=f"rm_player_{i}"):
-                    st.session_state.players.pop(i)
-                    save_data()
+    if st.session_state.rounds:
+        last_round = st.session_state.rounds[-1]
+        st.subheader(f"Round {last_round['round']}")
+        for i, match in enumerate(last_round["matches"]):
+            st.write(f"Court {i+1}: {match[0]} vs {match[1]}")
 
-        # Tab 3 - Leaderboard
-        with tab3:
-            player_scores = load_scores()
-            sorted_scores = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)
-            st.write("### Leaderboard")
-            for i, (player, score) in enumerate(sorted_scores, start=1):
-                st.write(f"{i}. {player}: {score} points")
+        st.text("Enter Scores")
+        for i, match in enumerate(last_round["matches"]):
+            st.text_input(f"Score for Court {i+1} ({match[0]} vs {match[1]})", key=f"score_{last_round['round']}_{i}")
 
-            if st.button("Delete All Player Scores"):
-                delete_all_scores()
+        st.button("Submit Scores")
 
-# Scheduling matches based on selected players and courts
-def schedule_matches():
-    # Initialize selected players and courts if not present
-    if 'selected_players' not in st.session_state:
-        st.session_state.selected_players = []
-
-    if 'selected_courts' not in st.session_state:
-        st.session_state.selected_courts = []
-
-    # Get the list of selected players for tonight's matches
-    selected_players = st.session_state.selected_players
-    if len(selected_players) < 2:
-        st.warning("Please select at least two players to schedule a match.")
-        return
-
-    # Get courts from the session state
-    selected_courts = st.session_state.selected_courts
-    if len(selected_courts) == 0:
-        st.warning("Please select at least one court for scheduling.")
-        return
-
-    # Match type options
-    match_type = st.radio("Match Type", ["Singles", "Doubles", "American Doubles", "Timed/Fast Four"])
-
-    # Generate matchups based on selected players
-    matches = []
-    if match_type == "Singles":
-        while len(selected_players) >= 2:
-            match = (selected_players.pop(), selected_players.pop())
-            matches.append(match)
-    elif match_type == "Doubles":
-        while len(selected_players) >= 4:
-            match = (selected_players.pop(), selected_players.pop(), selected_players.pop(), selected_players.pop())
-            matches.append(match)
-    elif match_type == "American Doubles":
-        while len(selected_players) >= 4:
-            match = (selected_players.pop(), selected_players.pop(), selected_players.pop(), selected_players.pop())
-            matches.append(match)
-    elif match_type == "Timed/Fast Four":
-        # Implement any rules for Timed/Fast Four if applicable
-        while len(selected_players) >= 2:
-            match = (selected_players.pop(), selected_players.pop())
-            matches.append(match)
-
-    # Display generated matches and the available courts
-    st.write("### Scheduled Matches")
-    match_courts = []
-    for match in matches:
-        st.write(f"Match: {match[0]} vs {match[1]}")
-        if len(match) == 4:
-            st.write(f"Match: {match[0]} & {match[1]} vs {match[2]} & {match[3]}")
-
-    for match in matches:
-        court = st.selectbox(f"Select court for match {match[0]} vs {match[1]}" if len(match) == 2 else f"Select court for match {match[0]} & {match[1]} vs {match[2]} & {match[3]}", st.session_state.courts)
-        match_courts.append((match, court))
-
-    if st.button("Generate Round"):
-        st.write("### Match Schedule")
-        for (match, court) in match_courts:
-            st.write(f"{match[0]} vs {match[1]} on {court}" if len(match) == 2 else f"{match[0]} & {match[1]} vs {match[2]} & {match[3]} on {court}")
-        st.session_state.match_courts = match_courts
-
-    # Allow score entry after the round is generated
-    if st.session_state.match_courts:
-        st.write("### Enter Scores")
-        score_dict = {}
-        for i, (match, court) in enumerate(st.session_state.match_courts):
-            if len(match) == 2:
-                score_dict[f"{match[0]} vs {match[1]}"] = st.text_input(f"Score for {match[0]} vs {match[1]}", key=f"score_{i}")
-            else:
-                score_dict[f"{match[0]} & {match[1]} vs {match[2]} & {match[3]}"] = st.text_input(f"Score for {match[0]} & {match[1]} vs {match[2]} & {match[3]}", key=f"score_{i}")
-
-        if st.button("Submit Scores"):
-            save_scores(score_dict)
-            st.success("Scores submitted successfully!")
-
-# Reset rounds
-def reset_rounds():
-    st.session_state.match_courts = []
-    st.session_state.selected_players = []
-    st.session_state.round_scores = []
-
-# Main app layout
-def main():
-    st.title("Tennis Match Scheduler")
-    sidebar_management()
-
-    # Tab for scheduling matches
-    with st.container():
-        st.header("Schedule Matches for Tonight")
-        st.write("Select the players and courts for tonight's matches.")
-
-        # Initialize selected players and courts
-        if 'selected_players' not in st.session_state:
-            st.session_state.selected_players = []
-
-        if 'selected_courts' not in st.session_state:
-            st.session_state.selected_courts = []
-
-        # Selector for courts
-        st.session_state.selected_courts = st.multiselect(
-            "Select Courts",
-            st.session_state.courts,
-            key="selected_courts"
-        )
-
-        # Selector for players
-        st.session_state.selected_players = st.multiselect(
-            "Select Players",
-            st.session_state.players,
-            key="selected_players"
-        )
-
-        # Button to generate matches
-        if st.button("Generate Matches"):
-            schedule_matches()
-
-        # Button to reset rounds
-        if st.button("Reset Rounds"):
-            reset_rounds()
-
-if __name__ == "__main__":
-    main()
+    if st.button("Reset Rounds"):
+        st.session_state.rounds = []
