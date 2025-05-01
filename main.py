@@ -85,6 +85,16 @@ def generate_singles_matches(players, courts):
     return matches
 
 # --- Schedule Tab ---
+# Ensure round_number is correctly set
+if "rounds" not in st.session_state:
+    st.session_state.rounds = []
+
+# Generate round number
+round_number = len(st.session_state.rounds) + 1  # this should be defined first
+if round_number > 1:
+    # your logic to check for consecutive rounds
+    pass
+
 with tabs[2]:
     st.header("Schedule Matches")
     st.write("Selected Players:", st.session_state.selected_players)
