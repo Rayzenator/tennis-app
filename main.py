@@ -57,7 +57,13 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
 
     for m in matches:
         history.add(frozenset(m))
-    return matches, history
+
+    # Assign matches in order of courts
+    named_matches = []
+    for court, match in zip(courts, matches):
+        named_matches.append((court, match))
+
+    return named_matches, history
 
 def update_scores(nightly_df, all_time_df, submitted_scores):
     for player, score in submitted_scores.items():
@@ -110,16 +116,16 @@ def app():
         st.session_state.rounds.append({
             'round': st.session_state.round_number,
             'matches': matches,
-            'scores': {player: 0 for m in matches for player in m}
+            'scores': {player: 0 for _, m in matches for player in m}
         })
         st.session_state.round_number += 1
 
     for round_info in st.session_state.rounds:
         st.subheader(f"Round {round_info['round']}")
         cols = st.columns(len(round_info['matches']))
-        for i, match in enumerate(round_info['matches']):
+        for i, (court_name, match) in enumerate(round_info['matches']):
             with cols[i]:
-                st.markdown(f"**Court {i+1}:**")
+                st.markdown(f"**{court_name}:**")
                 for player in match:
                     score = st.number_input(f"{player} score", min_value=0, key=f"r{round_info['round']}_{player}")
                     round_info['scores'][player] = score
