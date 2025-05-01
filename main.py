@@ -45,7 +45,9 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
 
     def penalty(p):
         recent = player_roles.get(p, [])
-        return recent[-1:] == ['rest'] or recent[-1:] == ['american']
+        if recent[-1:] == ['rest'] or recent[-1:] == ['american']:
+            return 1  # Penalize for recent rest or american
+        return 0
 
     players.sort(key=penalty)
     random.shuffle(players)
@@ -57,27 +59,37 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
     step = 2 if match_type == 'Singles' else 4
     leftover_players = players[max_players:]
 
-    if match_type == 'Singles' and allow_american and len(usable_players) % 2 != 0:
-        american = usable_players[:3]
-        matches.append(tuple(american))
-        for p in american:
-            player_roles[p].append("american")
-        usable_players = usable_players[3:]
+    used_players = set()
 
-    for i in range(0, len(usable_players), step):
+    i = 0
+    while i + step <= len(usable_players):
         match = tuple(usable_players[i:i+step])
         if len(match) == step:
             matches.append(match)
             for p in match:
                 player_roles[p].append("match")
+                used_players.add(p)
+        i += step
 
-    resting = set(players) - set(p for m in matches for p in m)
+    # Handle American Doubles if applicable
+    if match_type == 'Singles' and allow_american:
+        remaining = [p for p in players if p not in used_players]
+        if len(remaining) == 3:
+            matches.append(tuple(remaining))
+            for p in remaining:
+                player_roles[p].append("american")
+            used_players.update(remaining)
+
+    # Assign rest to unassigned players
+    resting = [p for p in players if p not in used_players]
     for p in resting:
         player_roles[p].append("rest")
 
+    # Record history
     for m in matches:
         history.add(frozenset(m))
 
+    # Assign court names by order
     named_matches = [(court, match) for court, match in zip(courts, matches)]
     return named_matches, history, player_roles
 
