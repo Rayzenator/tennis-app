@@ -150,5 +150,15 @@ def app():
         st.session_state.round_number = 1
         st.success("Nightly session reset.")
 
+    # Reset All-Time Leaderboard
+    with st.expander("⚠️ Danger Zone: All-Time Leaderboard"):
+        if st.button("Delete All-Time Leaderboard"):
+            if st.checkbox("Are you sure? This cannot be undone."):
+                if os.path.exists(SCORE_FILE):
+                    os.remove(SCORE_FILE)
+                all_time.drop(all_time.index, inplace=True)
+                save_scores(all_time)
+                st.success("All-Time Leaderboard has been deleted.")
+                
 if __name__ == '__main__':
     app()
