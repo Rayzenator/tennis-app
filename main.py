@@ -129,20 +129,30 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
     named_matches = [(court, match) for court, match in zip(courts, matches)]
     return named_matches, history, player_roles
 
-def update_scores(nightly_df, all_time_df, submitted_scores):
-    for player, score in submitted_scores.items():
-        if player not in nightly_df.index:
-            nightly_df.loc[player] = 0
-        nightly_df.at[player, 'games'] += score
-        if player not in all_time_df.index:
-            all_time_df.loc[player] = 0
-        all_time_df.at[player, 'games'] += score
+# Ensuring player and court names are unique
+def ensure_unique_names(players, courts):
+    # Ensure players are unique
+    unique_players = list(set(players))
+    if len(unique_players) != len(players):
+        st.warning("Duplicate player names found. Removing duplicates.")
+        players = unique_players
+
+    # Ensure courts are unique
+    unique_courts = list(set(courts))
+    if len(unique_courts) != len(courts):
+        st.warning("Duplicate court names found. Removing duplicates.")
+        courts = unique_courts
+
+    return players, courts
 
 def app():
     st.title("🎾 Tennis Round-Robin Scheduler")
 
     players = load_json(PLAYER_FILE)
     courts = load_json(COURT_FILE)
+
+    # Ensure player and court names are unique
+    players, courts = ensure_unique_names(players, courts)
 
     if 'all_time' not in st.session_state:
         st.session_state.all_time = load_scores()
@@ -162,13 +172,19 @@ def app():
         st.header("Manage Players & Courts")
         new_player = st.text_input("Add Player")
         if st.button("Add Player") and new_player:
-            players.append(new_player)
-            save_json(PLAYER_FILE, players)
+            if new_player not in players:
+                players.append(new_player)
+                save_json(PLAYER_FILE, players)
+            else:
+                st.warning("Player already exists!")
 
         new_court = st.text_input("Add Court")
         if st.button("Add Court") and new_court:
-            courts.append(new_court)
-            save_json(COURT_FILE, courts)
+            if new_court not in courts:
+                courts.append(new_court)
+                save_json(COURT_FILE, courts)
+            else:
+                st.warning("Court already exists!")
 
     selected_players = st.multiselect("Select Players for This Night", players)
     selected_courts = st.multiselect("Select Active Courts", courts)
@@ -206,42 +222,8 @@ def app():
     st.subheader("🎯 Nightly Leaderboard")
     st.dataframe(st.session_state.nightly.sort_values("games", ascending=False))
 
-    st.subheader("🏆 All-Time Leaderboard")
+    st.subheader("📜 All Time Leaderboard")
     st.dataframe(st.session_state.all_time.sort_values("games", ascending=False))
 
-    if st.button("Export Leaderboard to CSV"):
-        st.session_state.all_time.to_csv("all_time_leaderboard.csv")
-        st.success("Exported to all_time_leaderboard.csv")
-
-    if st.button("Reset Night"):
-        st.session_state.nightly = pd.DataFrame(0, index=players, columns=['games'])
-        st.session_state.history = set()
-        st.session_state.rounds = []
-        st.session_state.round_number = 1
-        st.session_state.player_roles = {p: [] for p in players}
-        st.success("Nightly session reset.")
-
-    with st.expander("⚠️ Danger Zone: All-Time Leaderboard"):
-        if 'confirm_delete' not in st.session_state:
-            st.session_state.confirm_delete = False
-
-        if not st.session_state.confirm_delete:
-            if st.button("Delete All-Time Leaderboard"):
-                st.session_state.confirm_delete = True
-        else:
-            st.warning("Are you sure you want to delete the All-Time Leaderboard? This cannot be undone.")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("✅ Yes, Delete"):
-                    if os.path.exists(SCORE_FILE):
-                        os.remove(SCORE_FILE)
-                    st.session_state.all_time = pd.DataFrame(columns=['games'])
-                    save_scores(st.session_state.all_time)
-                    st.success("All-Time Leaderboard has been deleted.")
-                    st.session_state.confirm_delete = False
-            with col2:
-                if st.button("❌ No, Keep"):
-                    st.session_state.confirm_delete = False
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app()
