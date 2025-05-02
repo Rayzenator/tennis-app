@@ -8,7 +8,33 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
-
+# Custom mobile-friendly CSS
+st.markdown("""
+    <style>
+        html, body, [class*="css"]  {
+            font-size: 20px !important;
+        }
+        .stNumberInput > div {
+            flex-direction: row;
+            align-items: center;
+        }
+        .stNumberInput input {
+            font-size: 22px !important;
+            padding: 12px !important;
+        }
+        button[kind="primary"], .stButton>button {
+            font-size: 20px !important;
+            padding: 10px 20px !important;
+            border-radius: 12px;
+        }
+        label, .stSelectbox label, .stTextInput label {
+            font-size: 18px !important;
+        }
+        .stMultiSelect, .stSelectbox, .stTextInput, .stNumberInput {
+            font-size: 18px !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 # File paths
 PLAYER_FILE = "players.json"
 COURT_FILE = "courts.json"
