@@ -68,17 +68,20 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
     lp = leftover_players
     if allow_american:
         if len(lp) == 1:
-            # Convert one match to singles and form an American Doubles with 3 players
-            if matches and len(matches[-1]) == 4:
-                last_match = matches.pop()
-                singles_match = last_match[:2]
-                extra_players = last_match[2:] + lp
+            convertible_idx = next((i for i, m in enumerate(matches) if len(m) == 4), None)
+            if convertible_idx is not None:
+                match_to_split = matches.pop(convertible_idx)
+                singles_match = match_to_split[:2]
+                american_group = match_to_split[2:] + lp
                 matches.append(singles_match)
-                matches.append(tuple(extra_players))
+                matches.append(tuple(american_group))
                 for p in singles_match:
                     player_roles.setdefault(p, []).append("match")
-                for p in extra_players:
+                for p in american_group:
                     player_roles.setdefault(p, []).append("american")
+            else:
+                for p in lp:
+                    player_roles.setdefault(p, []).append("rest")
         elif len(lp) == 2:
             matches.append(tuple(lp))
             for p in lp:
@@ -87,6 +90,12 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
             matches.append(tuple(lp))
             for p in lp:
                 player_roles.setdefault(p, []).append("american")
+        else:
+            for p in lp:
+                player_roles.setdefault(p, []).append("rest")
+    else:
+        for p in lp:
+            player_roles.setdefault(p, []).append("rest")
 
     all_matched_players = set(p for m in matches for p in m)
     resting = set(players) - all_matched_players
