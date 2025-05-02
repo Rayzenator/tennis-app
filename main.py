@@ -34,125 +34,45 @@ def save_scores(df):
     df.to_csv(SCORE_FILE)
 
 # Scheduler logic
-def schedule_round(players, courts, match_type='Singles', allow_american=False, history=None, player_roles=None):
+def schedule_round(players, courts, match_type='Singles', allow_american=False, history=None):
     if history is None:
         history = set()
-    if player_roles is None:
-        player_roles = {p: [] for p in players}
-
     matches = []
     players = players.copy()
-
-    def penalty(p):
-        recent = player_roles.get(p, [])
-        return recent[-1:] == ['rest'] or recent[-1:] == ['american']
-
-    players.sort(key=penalty)
     random.shuffle(players)
+
+    if match_type == 'Singles' and allow_american and len(players) % 2 != 0:
+        matches.append(tuple(players[:3]))
+        players = players[3:]
 
     court_capacity = 2 if match_type == 'Singles' else 4
     max_players = len(courts) * court_capacity
-    usable_players = players[:max_players]
-    leftover_players = players[max_players:]
+    players = players[:max_players]
 
     step = 2 if match_type == 'Singles' else 4
-
-    for i in range(0, len(usable_players), step):
-        match = tuple(usable_players[i:i+step])
+    for i in range(0, len(players), step):
+        match = tuple(players[i:i+step])
         if len(match) == step:
             matches.append(match)
-            for p in match:
-                player_roles.setdefault(p, []).append("match")
-
-    lp = leftover_players
-    if allow_american:
-        if match_type == 'Singles':
-            # Handle the case when there is 1 leftover player in Singles
-            if len(lp) == 1:
-                # Convert 1 leftover player into American Doubles
-                singles_match = matches.pop()  # Pop a singles match to split
-                american_group = singles_match[1:] + lp  # Add the leftover player
-                matches.append(singles_match[:1])  # Keep the original singles match
-                matches.append(tuple(american_group))  # Add American Doubles match
-                for p in singles_match:
-                    player_roles.setdefault(p, []).append("match")
-                for p in american_group:
-                    player_roles.setdefault(p, []).append("american")
-            elif len(lp) == 2:
-                matches.append(tuple(lp))  # Create a singles match
-                for p in lp:
-                    player_roles.setdefault(p, []).append("match")
-            elif len(lp) == 3:
-                matches.append(tuple(lp))  # Add an American Doubles match
-                for p in lp:
-                    player_roles.setdefault(p, []).append("american")
-        else:
-            # Doubles logic: handle remaining players as before (American Doubles or Rest)
-            if len(lp) == 1:
-                convertible_idx = next((i for i, m in enumerate(matches) if len(m) == 4), None)
-                if convertible_idx is not None:
-                    match_to_split = matches.pop(convertible_idx)
-                    singles_match = match_to_split[:2]
-                    american_group = match_to_split[2:] + lp
-                    matches.append(singles_match)
-                    matches.append(tuple(american_group))
-                    for p in singles_match:
-                        player_roles.setdefault(p, []).append("match")
-                    for p in american_group:
-                        player_roles.setdefault(p, []).append("american")
-                else:
-                    for p in lp:
-                        player_roles.setdefault(p, []).append("rest")
-            elif len(lp) == 2:
-                matches.append(tuple(lp))
-                for p in lp:
-                    player_roles.setdefault(p, []).append("match")
-            elif len(lp) == 3:
-                matches.append(tuple(lp))
-                for p in lp:
-                    player_roles.setdefault(p, []).append("american")
-            else:
-                for p in lp:
-                    player_roles.setdefault(p, []).append("rest")
-    else:
-        for p in lp:
-            player_roles.setdefault(p, []).append("rest")
-
-    all_matched_players = set(p for m in matches for p in m)
-    resting = set(players) - all_matched_players
-    for p in resting:
-        player_roles.setdefault(p, []).append("rest")
 
     for m in matches:
         history.add(frozenset(m))
+    return matches, history
 
-    named_matches = [(court, match) for court, match in zip(courts, matches)]
-    return named_matches, history, player_roles
-
-# Ensuring player and court names are unique
-def ensure_unique_names(players, courts):
-    # Ensure players are unique
-    unique_players = list(set(players))
-    if len(unique_players) != len(players):
-        st.warning("Duplicate player names found. Removing duplicates.")
-        players = unique_players
-
-    # Ensure courts are unique
-    unique_courts = list(set(courts))
-    if len(unique_courts) != len(courts):
-        st.warning("Duplicate court names found. Removing duplicates.")
-        courts = unique_courts
-
-    return players, courts
+def update_scores(nightly_df, all_time_df, submitted_scores):
+    for player, score in submitted_scores.items():
+        if player not in nightly_df.index:
+            nightly_df.loc[player] = 0
+        nightly_df.at[player, 'games'] += score
+        if player not in all_time_df.index:
+            all_time_df.loc[player] = 0
+        all_time_df.at[player, 'games'] += score
 
 def app():
     st.title("🎾 Tennis Round-Robin Scheduler")
 
     players = load_json(PLAYER_FILE)
     courts = load_json(COURT_FILE)
-
-    # Ensure player and court names are unique
-    players, courts = ensure_unique_names(players, courts)
 
     if 'all_time' not in st.session_state:
         st.session_state.all_time = load_scores()
@@ -165,26 +85,18 @@ def app():
         st.session_state.rounds = []
     if 'round_number' not in st.session_state:
         st.session_state.round_number = 1
-    if 'player_roles' not in st.session_state:
-        st.session_state.player_roles = {p: [] for p in players}
 
     with st.sidebar:
         st.header("Manage Players & Courts")
         new_player = st.text_input("Add Player")
         if st.button("Add Player") and new_player:
-            if new_player not in players:
-                players.append(new_player)
-                save_json(PLAYER_FILE, players)
-            else:
-                st.warning("Player already exists!")
+            players.append(new_player)
+            save_json(PLAYER_FILE, players)
 
         new_court = st.text_input("Add Court")
         if st.button("Add Court") and new_court:
-            if new_court not in courts:
-                courts.append(new_court)
-                save_json(COURT_FILE, courts)
-            else:
-                st.warning("Court already exists!")
+            courts.append(new_court)
+            save_json(COURT_FILE, courts)
 
     selected_players = st.multiselect("Select Players for This Night", players)
     selected_courts = st.multiselect("Select Active Courts", courts)
@@ -193,37 +105,55 @@ def app():
     allow_american = st.checkbox("Allow American Doubles")
 
     if st.button("Generate Round"):
-        matches, st.session_state.history, st.session_state.player_roles = schedule_round(
-            selected_players, selected_courts, match_type, allow_american,
-            st.session_state.history, st.session_state.player_roles)
-
+        matches, st.session_state.history = schedule_round(
+            selected_players, selected_courts, match_type, allow_american, st.session_state.history)
         st.session_state.rounds.append({
             'round': st.session_state.round_number,
             'matches': matches,
-            'scores': {player: 0 for _, m in matches for player in m}
+            'scores': {player: 0 for m in matches for player in m}
         })
         st.session_state.round_number += 1
 
     for round_info in st.session_state.rounds:
-        with st.expander(f"Round {round_info['round']}", expanded=(round_info['round'] == st.session_state.round_number - 1)):
-            cols = st.columns(len(round_info['matches']))
-            for i, (court_name, match) in enumerate(round_info['matches']):
-                with cols[i]:
-                    st.markdown(f"**{court_name}:**")
-                    for player in match:
-                        score = st.number_input(f"{player} score", min_value=0, key=f"r{round_info['round']}_{player}")
-                        round_info['scores'][player] = score
+        st.subheader(f"Round {round_info['round']}")
+        cols = st.columns(len(round_info['matches']))
+        for i, match in enumerate(round_info['matches']):
+            with cols[i]:
+                st.markdown(f"**Court {i+1}:**")
+                for player in match:
+                    score = st.number_input(f"{player} score", min_value=0, key=f"r{round_info['round']}_{player}")
+                    round_info['scores'][player] = score
 
-            if st.button(f"Submit Scores for Round {round_info['round']}"):
-                update_scores(st.session_state.nightly, st.session_state.all_time, round_info['scores'])
-                save_scores(st.session_state.all_time)
-                st.success(f"Scores for Round {round_info['round']} submitted.")
+        if st.button(f"Submit Scores for Round {round_info['round']}"):
+            update_scores(st.session_state.nightly, st.session_state.all_time, round_info['scores'])
+            save_scores(st.session_state.all_time)
+            st.success(f"Scores for Round {round_info['round']} submitted.")
 
     st.subheader("🎯 Nightly Leaderboard")
     st.dataframe(st.session_state.nightly.sort_values("games", ascending=False))
 
-    st.subheader("📜 All Time Leaderboard")
+    st.subheader("🏆 All-Time Leaderboard")
     st.dataframe(st.session_state.all_time.sort_values("games", ascending=False))
 
-if __name__ == "__main__":
+    if st.button("Export Leaderboard to CSV"):
+        st.session_state.all_time.to_csv("all_time_leaderboard.csv")
+        st.success("Exported to all_time_leaderboard.csv")
+
+    if st.button("Reset Night"):
+        st.session_state.nightly = pd.DataFrame(0, index=players, columns=['games'])
+        st.session_state.history = set()
+        st.session_state.rounds = []
+        st.session_state.round_number = 1
+        st.success("Nightly session reset.")
+
+    with st.expander("⚠️ Danger Zone: All-Time Leaderboard"):
+        if st.button("Delete All-Time Leaderboard"):
+            if st.checkbox("Are you sure? This cannot be undone."):
+                if os.path.exists(SCORE_FILE):
+                    os.remove(SCORE_FILE)
+                st.session_state.all_time = pd.DataFrame(columns=['games'])
+                save_scores(st.session_state.all_time)
+                st.success("All-Time Leaderboard has been deleted.")
+
+if __name__ == '__main__':
     app()
