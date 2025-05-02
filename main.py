@@ -9,44 +9,6 @@ from reportlab.pdfgen import canvas
 
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
 
-# Apply CSS for mobile optimization
-st.markdown("""
-    <style>
-        body {
-            font-size: 18px;
-            line-height: 1.6;
-        }
-        .stButton>button {
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 8px;
-        }
-        .stMultiselect, .stTextInput {
-            font-size: 16px;
-            padding: 10px;
-        }
-        .stNumberInput input {
-            font-size: 16px;
-            height: 40px;
-        }
-        .stSidebar {
-            font-size: 16px;
-        }
-        .stTextInput, .stSelectbox, .stCheckbox {
-            font-size: 16px;
-        }
-        .stMultiSelect, .stSelectbox {
-            font-size: 16px;
-        }
-        .stMarkdown {
-            font-size: 16px;
-        }
-        .stTextInput input {
-            padding: 10px;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
 # File paths
 PLAYER_FILE = "players.json"
 COURT_FILE = "courts.json"
@@ -77,11 +39,6 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
         history = set()
     if player_roles is None:
         player_roles = {p: [] for p in players}
-    
-    # Ensure every player has a role entry (in case some players are missing from player_roles)
-    for p in players:
-        if p not in player_roles:
-            player_roles[p] = []
 
     matches = []
     players = players.copy()
@@ -104,7 +61,7 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
         american = usable_players[:3]
         matches.append(tuple(american))
         for p in american:
-            player_roles[p].append("american")
+            player_roles.setdefault(p, []).append("american")
         usable_players = usable_players[3:]
 
     for i in range(0, len(usable_players), step):
@@ -112,11 +69,11 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
         if len(match) == step:
             matches.append(match)
             for p in match:
-                player_roles[p].append("match")
+                player_roles.setdefault(p, []).append("match")
 
     resting = set(players) - set(p for m in matches for p in m)
     for p in resting:
-        player_roles[p].append("rest")
+        player_roles.setdefault(p, []).append("rest")
 
     for m in matches:
         history.add(frozenset(m))
@@ -184,19 +141,19 @@ def app():
         st.session_state.round_number += 1
 
     for round_info in st.session_state.rounds:
-        st.subheader(f"Round {round_info['round']}")
-        cols = st.columns(len(round_info['matches']))
-        for i, (court_name, match) in enumerate(round_info['matches']):
-            with cols[i]:
-                st.markdown(f"**{court_name}:**")
-                for player in match:
-                    score = st.number_input(f"{player} score", min_value=0, key=f"r{round_info['round']}_{player}")
-                    round_info['scores'][player] = score
+        with st.expander(f"Round {round_info['round']}", expanded=(round_info['round'] == st.session_state.round_number - 1)):
+            cols = st.columns(len(round_info['matches']))
+            for i, (court_name, match) in enumerate(round_info['matches']):
+                with cols[i]:
+                    st.markdown(f"**{court_name}:**")
+                    for player in match:
+                        score = st.number_input(f"{player} score", min_value=0, key=f"r{round_info['round']}_{player}")
+                        round_info['scores'][player] = score
 
-        if st.button(f"Submit Scores for Round {round_info['round']}"):
-            update_scores(st.session_state.nightly, st.session_state.all_time, round_info['scores'])
-            save_scores(st.session_state.all_time)
-            st.success(f"Scores for Round {round_info['round']} submitted.")
+            if st.button(f"Submit Scores for Round {round_info['round']}"):
+                update_scores(st.session_state.nightly, st.session_state.all_time, round_info['scores'])
+                save_scores(st.session_state.all_time)
+                st.success(f"Scores for Round {round_info['round']} submitted.")
 
     st.subheader("🎯 Nightly Leaderboard")
     st.dataframe(st.session_state.nightly.sort_values("games", ascending=False))
