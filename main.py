@@ -66,32 +66,54 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
 
     lp = leftover_players
     if allow_american:
-        if len(lp) == 1:
-            convertible_idx = next((i for i, m in enumerate(matches) if len(m) == 4), None)
-            if convertible_idx is not None:
-                match_to_split = matches.pop(convertible_idx)
-                singles_match = match_to_split[:2]
-                american_group = match_to_split[2:] + lp
-                matches.append(singles_match)
-                matches.append(tuple(american_group))
+        if match_type == 'Singles':
+            # Handle the case when there is 1 leftover player in Singles
+            if len(lp) == 1:
+                # Convert 1 leftover player into American Doubles
+                singles_match = matches.pop()  # Pop a singles match to split
+                american_group = singles_match[1:] + lp  # Add the leftover player
+                matches.append(singles_match[:1])  # Keep the original singles match
+                matches.append(tuple(american_group))  # Add American Doubles match
                 for p in singles_match:
                     player_roles.setdefault(p, []).append("match")
                 for p in american_group:
                     player_roles.setdefault(p, []).append("american")
+            elif len(lp) == 2:
+                matches.append(tuple(lp))  # Create a singles match
+                for p in lp:
+                    player_roles.setdefault(p, []).append("match")
+            elif len(lp) == 3:
+                matches.append(tuple(lp))  # Add an American Doubles match
+                for p in lp:
+                    player_roles.setdefault(p, []).append("american")
+        else:
+            # Doubles logic: handle remaining players as before (American Doubles or Rest)
+            if len(lp) == 1:
+                convertible_idx = next((i for i, m in enumerate(matches) if len(m) == 4), None)
+                if convertible_idx is not None:
+                    match_to_split = matches.pop(convertible_idx)
+                    singles_match = match_to_split[:2]
+                    american_group = match_to_split[2:] + lp
+                    matches.append(singles_match)
+                    matches.append(tuple(american_group))
+                    for p in singles_match:
+                        player_roles.setdefault(p, []).append("match")
+                    for p in american_group:
+                        player_roles.setdefault(p, []).append("american")
+                else:
+                    for p in lp:
+                        player_roles.setdefault(p, []).append("rest")
+            elif len(lp) == 2:
+                matches.append(tuple(lp))
+                for p in lp:
+                    player_roles.setdefault(p, []).append("match")
+            elif len(lp) == 3:
+                matches.append(tuple(lp))
+                for p in lp:
+                    player_roles.setdefault(p, []).append("american")
             else:
                 for p in lp:
                     player_roles.setdefault(p, []).append("rest")
-        elif len(lp) == 2:
-            matches.append(tuple(lp))
-            for p in lp:
-                player_roles.setdefault(p, []).append("match")
-        elif len(lp) == 3:
-            matches.append(tuple(lp))
-            for p in lp:
-                player_roles.setdefault(p, []).append("american")
-        else:
-            for p in lp:
-                player_roles.setdefault(p, []).append("rest")
     else:
         for p in lp:
             player_roles.setdefault(p, []).append("rest")
