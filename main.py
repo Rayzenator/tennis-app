@@ -64,7 +64,6 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
             for p in match:
                 player_roles.setdefault(p, []).append("match")
 
-    # Handle leftover players
     lp = leftover_players
     if allow_american:
         if len(lp) == 1:
