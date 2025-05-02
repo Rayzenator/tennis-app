@@ -200,13 +200,26 @@ def app():
         st.success("Nightly session reset.")
 
     with st.expander("⚠️ Danger Zone: All-Time Leaderboard"):
-        if st.button("Delete All-Time Leaderboard"):
-            if st.checkbox("Are you sure? This cannot be undone."):
-                if os.path.exists(SCORE_FILE):
-                    os.remove(SCORE_FILE)
-                st.session_state.all_time = pd.DataFrame(columns=['games'])
-                save_scores(st.session_state.all_time)
-                st.success("All-Time Leaderboard has been deleted.")
+        if 'confirm_delete' not in st.session_state:
+            st.session_state.confirm_delete = False
+    
+        if not st.session_state.confirm_delete:
+            if st.button("Delete All-Time Leaderboard"):
+                st.session_state.confirm_delete = True
+        else:
+            st.warning("Are you sure you want to delete the All-Time Leaderboard? This cannot be undone.")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("✅ Yes, Delete"):
+                    if os.path.exists(SCORE_FILE):
+                        os.remove(SCORE_FILE)
+                    st.session_state.all_time = pd.DataFrame(columns=['games'])
+                    save_scores(st.session_state.all_time)
+                    st.success("All-Time Leaderboard has been deleted.")
+                    st.session_state.confirm_delete = False
+            with col2:
+                if st.button("❌ No, Keep"):
+                    st.session_state.confirm_delete = False
 
 if __name__ == '__main__':
     app()
