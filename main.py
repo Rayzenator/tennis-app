@@ -8,33 +8,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 st.set_page_config(page_title="Tennis Scheduler", layout="wide")
-# Custom mobile-friendly CSS
-st.markdown("""
-    <style>
-        html, body, [class*="css"]  {
-            font-size: 20px !important;
-        }
-        .stNumberInput > div {
-            flex-direction: row;
-            align-items: center;
-        }
-        .stNumberInput input {
-            font-size: 22px !important;
-            padding: 12px !important;
-        }
-        button[kind="primary"], .stButton>button {
-            font-size: 20px !important;
-            padding: 10px 20px !important;
-            border-radius: 12px;
-        }
-        label, .stSelectbox label, .stTextInput label {
-            font-size: 18px !important;
-        }
-        .stMultiSelect, .stSelectbox, .stTextInput, .stNumberInput {
-            font-size: 18px !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
+
 # File paths
 PLAYER_FILE = "players.json"
 COURT_FILE = "courts.json"
@@ -79,16 +53,9 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
     court_capacity = 2 if match_type == 'Singles' else 4
     max_players = len(courts) * court_capacity
     usable_players = players[:max_players]
-
-    step = 2 if match_type == 'Singles' else 4
     leftover_players = players[max_players:]
 
-    if match_type == 'Singles' and allow_american and len(usable_players) % 2 != 0:
-        american = usable_players[:3]
-        matches.append(tuple(american))
-        for p in american:
-            player_roles.setdefault(p, []).append("american")
-        usable_players = usable_players[3:]
+    step = 2 if match_type == 'Singles' else 4
 
     for i in range(0, len(usable_players), step):
         match = tuple(usable_players[i:i+step])
@@ -97,7 +64,40 @@ def schedule_round(players, courts, match_type='Singles', allow_american=False, 
             for p in match:
                 player_roles.setdefault(p, []).append("match")
 
-    resting = set(players) - set(p for m in matches for p in m)
+    lp = leftover_players
+    if allow_american:
+        if len(lp) == 1:
+            convertible_idx = next((i for i, m in enumerate(matches) if len(m) == 4), None)
+            if convertible_idx is not None:
+                match_to_split = matches.pop(convertible_idx)
+                singles_match = match_to_split[:2]
+                american_group = match_to_split[2:] + lp
+                matches.append(singles_match)
+                matches.append(tuple(american_group))
+                for p in singles_match:
+                    player_roles.setdefault(p, []).append("match")
+                for p in american_group:
+                    player_roles.setdefault(p, []).append("american")
+            else:
+                for p in lp:
+                    player_roles.setdefault(p, []).append("rest")
+        elif len(lp) == 2:
+            matches.append(tuple(lp))
+            for p in lp:
+                player_roles.setdefault(p, []).append("match")
+        elif len(lp) == 3:
+            matches.append(tuple(lp))
+            for p in lp:
+                player_roles.setdefault(p, []).append("american")
+        else:
+            for p in lp:
+                player_roles.setdefault(p, []).append("rest")
+    else:
+        for p in lp:
+            player_roles.setdefault(p, []).append("rest")
+
+    all_matched_players = set(p for m in matches for p in m)
+    resting = set(players) - all_matched_players
     for p in resting:
         player_roles.setdefault(p, []).append("rest")
 
@@ -128,7 +128,7 @@ def app():
     if 'nightly' not in st.session_state:
         st.session_state.nightly = pd.DataFrame(0, index=players, columns=['games'])
     if 'history' not in st.session_state:
-        st.session_state.history = set()
+        st.session_state.history = []
     if 'rounds' not in st.session_state:
         st.session_state.rounds = []
     if 'round_number' not in st.session_state:
@@ -155,9 +155,12 @@ def app():
     allow_american = st.checkbox("Allow American Doubles")
 
     if st.button("Generate Round"):
-        matches, st.session_state.history, st.session_state.player_roles = schedule_round(
+        history_set = set(frozenset(h) for h in st.session_state.history)
+        matches, history_set, st.session_state.player_roles = schedule_round(
             selected_players, selected_courts, match_type, allow_american,
-            st.session_state.history, st.session_state.player_roles)
+            history_set, st.session_state.player_roles)
+
+        st.session_state.history = [tuple(m) for m in history_set]
 
         st.session_state.rounds.append({
             'round': st.session_state.round_number,
@@ -193,7 +196,7 @@ def app():
 
     if st.button("Reset Night"):
         st.session_state.nightly = pd.DataFrame(0, index=players, columns=['games'])
-        st.session_state.history = set()
+        st.session_state.history = []
         st.session_state.rounds = []
         st.session_state.round_number = 1
         st.session_state.player_roles = {p: [] for p in players}
@@ -202,7 +205,7 @@ def app():
     with st.expander("⚠️ Danger Zone: All-Time Leaderboard"):
         if 'confirm_delete' not in st.session_state:
             st.session_state.confirm_delete = False
-    
+
         if not st.session_state.confirm_delete:
             if st.button("Delete All-Time Leaderboard"):
                 st.session_state.confirm_delete = True
