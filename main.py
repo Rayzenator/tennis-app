@@ -142,32 +142,23 @@ def app():
         h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
             color: #ffffff !important;
         }
-        
-        /* Set white text for all section titles (headings) on the main app screen */
-        .stTextInput label, .stSelectbox label, .stCheckbox label {
-            color: #ffffff !important;  /* White text for labels of all inputs */
-        }
-        
-        /* Set white text for these specific section titles (e.g., Select Players, Select Courts, etc.) */
-        .stMultiselect label, .stRadio label, .stSelectbox label {
-            color: #ffffff !important; /* White text for multi-select, radio buttons, select box labels */
+    
+        /* Specific styling for labels in input components, select boxes, etc. */
+        /* More specific target for labels (Select Players, Courts, Match Type, etc.) */
+        .stTextInput label, .stSelectbox label, .stCheckbox label, .stMultiselect label {
+            color: #ffffff !important;  /* White text for all labels */
         }
     
-        /* Input and Select boxes with black text on light backgrounds */
-        input[type=number], .stTextInput input, .stSelectbox>div>div, .stCheckbox>label>div {
+        /* Ensure black text for inputs and selects (on light backgrounds) */
+        input[type=number], .stTextInput input, .stSelectbox>div>div, .stCheckbox>label>div, .stMultiselect>div>div {
             font-size: 20px !important;
-            color: #000000;  /* Black text for input boxes and select boxes */
-            background-color: #ffffff !important; /* White background for input/select boxes */
-        }
-        
-        /* Set bright yellow color for Stopwatch text and icon */
-        .stTextInput div[role="alert"], .stTextInput div[role="button"] {
-            color: #ff0 !important;  /* Force bright yellow text for "Set Stopwatch" */
+            color: #000000 !important;  /* Black text for inputs and selects */
+            background-color: #ffffff !important; /* White background for inputs/selects */
         }
     
-        /* Ensure bright yellow color for any stopwatch icons or text */
-        .stTextInput div[role="alert"], .stTextInput span, .stTextInput i {
-            color: #ff0 !important; /* Force bright yellow */
+        /* Set bright yellow color for "Set Stopwatch" text */
+        .stTextInput div[role="alert"], .stTextInput div[role="button"], .stTextInput span, .stTextInput i {
+            color: #ff0 !important;  /* Force bright yellow for stopwatch text and icons */
         }
     
         /* Red buttons for deleting players and courts */
@@ -178,6 +169,7 @@ def app():
             font-weight: bold;
             border-radius: 0.5rem;
         }
+    
         /* Sidebar styling */
         section[data-testid="stSidebar"] {
             background-color: #d3d3d3 !important;
@@ -192,6 +184,7 @@ def app():
         section[data-testid="stSidebar"] h2 {
             color: #000000 !important; /* Black color for the "Manage Players and Tabs" heading */
         }
+    
         /* Sidebar Tab - Keep same format but change tab color */
         .stTabs>div>div {
             background-color: #ffff00 !important; /* Bright yellow background for the tabs */
