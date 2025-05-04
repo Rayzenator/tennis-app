@@ -127,7 +127,14 @@ def app():
             padding-top: 2rem;
             padding-bottom: 2rem;
             background-color: #121212;
-            color: #ffffff;  /* Set all body text to white */
+            color: #E0E0E0;
+        }
+        section[data-testid="stSidebar"] {
+            background-color: #2e2e2e;
+            color: #ffffff;
+        }
+        section[data-testid="stSidebar"] * {
+            color: #ffffff !important;
         }
         .stButton>button {
             background-color: #32CD32;
@@ -147,40 +154,6 @@ def app():
         }
         .stCheckbox>label>div {
             font-size: 20px !important;
-        }
-        .stSidebar > .sidebar-content {
-            background-color: #FFEB3B;
-        }
-        
-        /* General headings (h1 to h6) on dark background */
-        h1, h2, h3, h4, h5, h6 {
-            color: #ffffff !important;  /* Ensure headings are white */
-        }
-    
-        /* Specific text color for Streamlit components on dark background */
-        .stTextInput label, .stSelectbox label, .stCheckbox label, .stMarkdown, .stMultiSelect {
-            color: #ffffff !important;
-        }
-    
-        /* For all text inside the main dark background container */
-        .block-container p, .block-container span, .block-container div, .block-container li {
-            color: #ffffff !important; /* Ensure all text is white */
-        }
-    
-        /* Tabs background color and text color */
-        .stTabs > div > div > div {
-            background-color: #FFEB3B !important;  /* Bright Yellow */
-            color: #000000 !important; /* Dark text */
-        }
-    
-        /* Ensure headings inside markdown and multi-select are white */
-        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
-            color: #ffffff !important;
-        }
-    
-        /* For any Streamlit text components like selectboxes or text inputs */
-        .stSelectbox div, .stTextInput div, .stCheckbox div, .stMultiSelect div {
-            color: #ffffff !important;
         }
     </style>
     """, unsafe_allow_html=True)
