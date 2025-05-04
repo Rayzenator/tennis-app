@@ -120,44 +120,45 @@ def update_scores(nightly_df, all_time_df, submitted_scores):
 def app():
     st.markdown("""
     <style>
-    html, body, [class*="css"]  {
-        font-size: 20px !important;
-    }
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        background-color: #121212;
-        color: #ffffff;
-    }
-    h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
-        color: #ffffff !important;
-    }
-    .stButton>button {
-        background-color: #32CD32;
-        color: white;
-        border-radius: 0.5rem;
-        padding: 0.5rem 1rem;
-        font-size: 18px;
-    }
-    input[type=number] {
-        font-size: 20px !important;
-    }
-    .stTextInput input {
-        font-size: 20px !important;
-    }
-    .stSelectbox>div>div {
-        font-size: 20px !important;
-    }
-    .stCheckbox>label>div {
-        font-size: 20px !important;
-    }
-    div[data-testid="delete-player"] > button,
-    div[data-testid="delete-court"] > button {
-        background-color: #d9534f;
-        color: white;
-        font-weight: bold;
-        border-radius: 0.5rem;
-    }
+        html, body, [class*="css"] {
+            font-size: 20px !important;
+        }
+        .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background-color: #000000;
+            color: #ffffff;
+        }
+        .stButton>button {
+            background-color: #32CD32;
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 18px;
+        }
+        input[type=number], .stTextInput input, .stSelectbox>div>div, .stCheckbox>label>div {
+            font-size: 20px !important;
+            color: #ffffff;
+        }
+        h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
+            color: #ffffff !important;
+        }
+        div[data-testid="delete-player"] > button,
+        div[data-testid="delete-court"] > button {
+            background-color: #d9534f;
+            color: white;
+            font-weight: bold;
+            border-radius: 0.5rem;
+        }
+        section[data-testid="stSidebar"] {
+            background-color: #d3d3d3 !important;
+            color: #000000 !important;
+        }
+        section[data-testid="stSidebar"] label,
+        section[data-testid="stSidebar"] span,
+        section[data-testid="stSidebar"] div {
+            color: #000000 !important;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -215,7 +216,7 @@ def app():
     selected_players = st.multiselect("Select Players for This Night", sorted(set(players)))
     selected_courts = st.multiselect("Select Active Courts", sorted(set(courts)))
     match_type = st.selectbox("Match Type", ["Singles", "Doubles"])
-    format_type = st.selectbox("Format", ["Fast Four", "Timed"])
+    format_type = st.selectbox("Format", ["Fast Four", "Timed"], index=1)
     allow_american = st.checkbox("Allow American Doubles")
 
     if st.button("Generate Round"):
