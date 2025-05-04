@@ -150,7 +150,6 @@ def app():
         }
         .stSidebar > .sidebar-content {
             background-color: #ffff00;
-            color: #000000;
         }
         
         /* General headings (h1 to h6) on dark background */
