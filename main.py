@@ -149,7 +149,7 @@ def app():
             font-size: 20px !important;
         }
         .stSidebar > .sidebar-content {
-            background-color: #121212;
+            background-color: #333333;
         }
         
         /* General headings (h1 to h6) on dark background */
@@ -243,7 +243,7 @@ def app():
     selected_players = st.multiselect("Select Players for This Night", sorted(set(players)))
     selected_courts = st.multiselect("Select Active Courts", sorted(set(courts)))
     match_type = st.selectbox("Match Type", ["Singles", "Doubles"])
-    format_type = st.selectbox("Format", ["Fast Four", "Timed"])
+    format_type = st.selectbox("Format", ["Timed", "Fast Four"])
     
     if format_type == "Timed":
         match_time = st.slider("Select Match Time (minutes)", min_value=1, max_value=60, value=15)
