@@ -19,7 +19,7 @@ SCORE_FILE = "scores.csv"
 def load_json(path, default=[]):
     if os.path.exists(path):
         with open(path, 'r') as f:
-            return json.load(f)
+            return list(set(json.load(f)))  # Ensures no duplicates
     return default
 
 def save_json(path, data):
@@ -188,6 +188,7 @@ def app():
             else:
                 st.warning("Court already exists!")
 
+    # Ensure no duplicates when selecting players and courts
     selected_players = st.multiselect("Select Players for This Night", sorted(set(players)))
     selected_courts = st.multiselect("Select Active Courts", sorted(set(courts)))
     match_type = st.selectbox("Match Type", ["Singles", "Doubles"])
