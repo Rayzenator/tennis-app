@@ -4,6 +4,7 @@ import json
 import os
 import pandas as pd
 from io import BytesIO
+from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
@@ -117,6 +118,39 @@ def update_scores(nightly_df, all_time_df, submitted_scores):
         all_time_df.at[player, 'games'] += score
 
 def app():
+    st.markdown("""
+    <style>
+        html, body, [class*="css"]  {
+            font-size: 20px !important;
+        }
+        .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background-color: #121212;
+            color: #E0E0E0;
+        }
+        .stButton>button {
+            background-color: #32CD32;
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 18px;
+        }
+        input[type=number] {
+            font-size: 20px !important;
+        }
+        .stTextInput input {
+            font-size: 20px !important;
+        }
+        .stSelectbox>div>div {
+            font-size: 20px !important;
+        }
+        .stCheckbox>label>div {
+            font-size: 20px !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.title("🎾 Tennis Round-Robin Scheduler")
 
     players = load_json(PLAYER_FILE)
@@ -127,7 +161,7 @@ def app():
 
     if 'nightly' not in st.session_state:
         st.session_state.nightly = pd.DataFrame(0, index=players, columns=['games'])
-    if 'history' not in st.session_state:
+    if 'history' not in st.session_state or not isinstance(st.session_state.history, list):
         st.session_state.history = []
     if 'rounds' not in st.session_state:
         st.session_state.rounds = []
@@ -140,22 +174,33 @@ def app():
         st.header("Manage Players & Courts")
         new_player = st.text_input("Add Player")
         if st.button("Add Player") and new_player:
-            players.append(new_player)
-            save_json(PLAYER_FILE, players)
+            if new_player not in players:
+                players.append(new_player)
+                save_json(PLAYER_FILE, players)
+            else:
+                st.warning("Player already exists!")
 
         new_court = st.text_input("Add Court")
         if st.button("Add Court") and new_court:
-            courts.append(new_court)
-            save_json(COURT_FILE, courts)
+            if new_court not in courts:
+                courts.append(new_court)
+                save_json(COURT_FILE, courts)
+            else:
+                st.warning("Court already exists!")
 
-    selected_players = st.multiselect("Select Players for This Night", players)
-    selected_courts = st.multiselect("Select Active Courts", courts)
+    selected_players = st.multiselect("Select Players for This Night", sorted(set(players)))
+    selected_courts = st.multiselect("Select Active Courts", sorted(set(courts)))
     match_type = st.selectbox("Match Type", ["Singles", "Doubles"])
     format_type = st.selectbox("Format", ["Fast Four", "Timed"])
     allow_american = st.checkbox("Allow American Doubles")
 
     if st.button("Generate Round"):
-        history_set = set(frozenset(h) for h in st.session_state.history)
+        previous_history = st.session_state.history
+        if not isinstance(previous_history, list):
+            previous_history = []
+
+        history_set = set(frozenset(h) for h in previous_history)
+
         matches, history_set, st.session_state.player_roles = schedule_round(
             selected_players, selected_courts, match_type, allow_american,
             history_set, st.session_state.player_roles)
@@ -171,10 +216,9 @@ def app():
 
     for round_info in st.session_state.rounds:
         with st.expander(f"Round {round_info['round']}", expanded=(round_info['round'] == st.session_state.round_number - 1)):
-            cols = st.columns(len(round_info['matches']))
-            for i, (court_name, match) in enumerate(round_info['matches']):
-                with cols[i]:
-                    st.markdown(f"**{court_name}:**")
+            for court_name, match in round_info['matches']:
+                with st.container():
+                    st.markdown(f"### {court_name}")
                     for player in match:
                         score = st.number_input(f"{player} score", min_value=0, key=f"r{round_info['round']}_{player}")
                         round_info['scores'][player] = score
@@ -191,8 +235,10 @@ def app():
     st.dataframe(st.session_state.all_time.sort_values("games", ascending=False))
 
     if st.button("Export Leaderboard to CSV"):
-        st.session_state.all_time.to_csv("all_time_leaderboard.csv")
-        st.success("Exported to all_time_leaderboard.csv")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"tennis_leaderboard_{timestamp}.csv"
+        st.session_state.all_time.to_csv(filename)
+        st.success(f"Exported to {filename}")
 
     if st.button("Reset Night"):
         st.session_state.nightly = pd.DataFrame(0, index=players, columns=['games'])
