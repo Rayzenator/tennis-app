@@ -137,27 +137,41 @@ def app():
                 padding: 0.5rem 1rem;
                 font-size: 18px;
             }
-            
+        
             /* Set white text color for headings on the main app screen */
             h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
                 color: #ffffff !important;
             }
         
             /* Specific styling for labels in input components, select boxes, etc. */
-            /* More specific target for labels (Select Players, Courts, Match Type, etc.) */
-            .stTextInput label, .stSelectbox label, .stCheckbox label, .stMultiselect label {
+            /* Targeting labels using a more specific class */
+            .stTextInput label, 
+            .stSelectbox label, 
+            .stCheckbox label, 
+            .stMultiselect label,
+            .stRadio label,
+            .stSlider label {
                 color: #ffffff !important;  /* White text for all labels */
             }
         
             /* Ensure black text for inputs and selects (on light backgrounds) */
-            input[type=number], .stTextInput input, .stSelectbox>div>div, .stCheckbox>label>div, .stMultiselect>div>div {
+            input[type=number], 
+            .stTextInput input, 
+            .stSelectbox>div>div, 
+            .stCheckbox>label>div, 
+            .stMultiselect>div>div, 
+            .stRadio>div, 
+            .stSlider>div {
                 font-size: 20px !important;
                 color: #000000 !important;  /* Black text for inputs and selects */
                 background-color: #ffffff !important; /* White background for inputs/selects */
             }
         
-            /* Set bright yellow color for "Set Stopwatch" text */
-            .stTextInput div[role="alert"], .stTextInput div[role="button"], .stTextInput span, .stTextInput i {
+            /* Set bright yellow color for "Set Stopwatch" text and icons */
+            .stTextInput div[role="alert"], 
+            .stTextInput div[role="button"], 
+            .stTextInput span, 
+            .stTextInput i {
                 color: #ff0 !important;  /* Force bright yellow for stopwatch text and icons */
             }
         
