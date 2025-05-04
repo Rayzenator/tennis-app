@@ -141,6 +141,17 @@ def app():
         h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
             color: #ffffff !important;
         }
+        
+        /* Set white text color for all headings in the app (e.g., Select Players, Select Courts, etc.) */
+        .stTextInput label, .stSelectbox label, .stCheckbox label {
+            color: #ffffff !important;  /* White text for labels of all inputs */
+        }
+        
+        /* Set white text for all section titles (headings) on the main app screen */
+        .stRadio > label, .stMultiselect > label, .stSelectbox > label, .stCheckbox > label {
+            color: #ffffff !important;  /* Ensure white text for these section titles */
+        }
+        
         /* Input and Select boxes with black text on light backgrounds */
         input[type=number], .stTextInput input, .stSelectbox>div>div, .stCheckbox>label>div {
             font-size: 20px !important;
