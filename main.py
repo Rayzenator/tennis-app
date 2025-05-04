@@ -225,6 +225,9 @@ def app():
     selected_courts = st.multiselect("Select Active Courts", sorted(set(courts)))
     match_type = st.selectbox("Match Type", ["Singles", "Doubles"])
     format_type = st.selectbox("Format", ["Fast Four", "Timed"], index=1)
+    if format_type == "Timed":
+        match_duration = st.slider("Match Duration (minutes)", min_value=5, max_value=60, value=15, step=5)
+        st.info(f"⏱ Set stopwatch to **{match_duration} minutes**")
     allow_american = st.checkbox("Allow American Doubles")
 
     if st.button("Generate Round"):
