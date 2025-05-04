@@ -151,27 +151,34 @@ def app():
         .stSidebar > .sidebar-content {
             background-color: #121212;
         }
+        
+        /* General headings (h1 to h6) on dark background */
         h1, h2, h3, h4, h5, h6 {
-            color: #ffffff !important;  /* Set all heading text to white */
+            color: #ffffff !important;  /* Ensure headings are white */
         }
-        .stTextInput label, .stSelectbox label, .stCheckbox label {
-            color: #ffffff !important;  /* Set all labels to white */
-        }
-        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
+    
+        /* Specific text color for Streamlit components on dark background */
+        .stTextInput label, .stSelectbox label, .stCheckbox label, .stMarkdown, .stMultiSelect {
             color: #ffffff !important;
         }
     
-        /* Tabs: Set text color to black */
+        /* For all text inside the main dark background container */
+        .block-container p, .block-container span, .block-container div, .block-container li {
+            color: #ffffff !important; /* Ensure all text is white */
+        }
+    
+        /* Tabs text should be black */
         .stTabs > div > div > div {
             color: #000000 !important;
         }
     
-        /* Text inside the dark background areas on the main app screen */
-        .stSelectbox, .stTextInput, .stCheckbox, .stMarkdown, .stMultiSelect {
+        /* Ensure headings inside markdown and multi-select are white */
+        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
             color: #ffffff !important;
         }
     
-        .stTextInput label, .stSelectbox label, .stCheckbox label {
+        /* For any Streamlit text components like selectboxes or text inputs */
+        .stSelectbox div, .stTextInput div, .stCheckbox div, .stMultiSelect div {
             color: #ffffff !important;
         }
     </style>
