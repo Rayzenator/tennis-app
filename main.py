@@ -127,7 +127,7 @@ def app():
             padding-top: 2rem;
             padding-bottom: 2rem;
             background-color: #121212;
-            color: #E0E0E0;
+            color: #ffffff;  /* Set all body text to white */
         }
         .stButton>button {
             background-color: #32CD32;
@@ -152,13 +152,13 @@ def app():
             background-color: #121212;
         }
         h1, h2, h3, h4, h5, h6 {
-            color: #E0E0E0 !important;  /* Lighter heading text */
+            color: #ffffff !important;  /* Set all heading text to white */
         }
         .stTextInput label, .stSelectbox label, .stCheckbox label {
-            color: #B0B0B0 !important;  /* Lighter label text */
+            color: #ffffff !important;  /* Set all labels to white */
         }
         .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
-            color: #E0E0E0 !important;
+            color: #ffffff !important;
         }
     </style>
     """, unsafe_allow_html=True)
