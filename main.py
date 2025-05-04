@@ -167,9 +167,10 @@ def app():
             color: #ffffff !important; /* Ensure all text is white */
         }
     
-        /* Tabs text should be black */
+        /* Tabs background color and text color */
         .stTabs > div > div > div {
-            color: #000000 !important;
+            background-color: #FFEB3B !important;  /* Bright Yellow */
+            color: #000000 !important; /* Dark text */
         }
     
         /* Ensure headings inside markdown and multi-select are white */
