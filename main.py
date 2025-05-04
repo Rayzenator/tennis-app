@@ -160,6 +160,20 @@ def app():
         .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
             color: #ffffff !important;
         }
+    
+        /* Tabs: Set text color to black */
+        .stTabs > div > div > div {
+            color: #000000 !important;
+        }
+    
+        /* Text inside the dark background areas on the main app screen */
+        .stSelectbox, .stTextInput, .stCheckbox, .stMarkdown, .stMultiSelect {
+            color: #ffffff !important;
+        }
+    
+        .stTextInput label, .stSelectbox label, .stCheckbox label {
+            color: #ffffff !important;
+        }
     </style>
     """, unsafe_allow_html=True)
 
