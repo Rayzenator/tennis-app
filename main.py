@@ -159,6 +159,14 @@ def app():
         section[data-testid="stSidebar"] div {
             color: #000000 !important;
         }
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        .stTextInput input {
+            background-color: #222222 !important;
+            color: #ffffff !important;
+            border: 1px solid #555555;
+        }
     </style>
     """, unsafe_allow_html=True)
 
