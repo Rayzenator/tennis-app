@@ -120,41 +120,44 @@ def update_scores(nightly_df, all_time_df, submitted_scores):
 def app():
     st.markdown("""
     <style>
-        html, body, [class*="css"]  {
-            font-size: 20px !important;
-        }
-        .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-            background-color: #121212;
-            color: #E0E0E0;
-        }
-        .stButton>button {
-            background-color: #32CD32;
-            color: white;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1rem;
-            font-size: 18px;
-        }
-        input[type=number] {
-            font-size: 20px !important;
-        }
-        .stTextInput input {
-            font-size: 20px !important;
-        }
-        .stSelectbox>div>div {
-            font-size: 20px !important;
-        }
-        .stCheckbox>label>div {
-            font-size: 20px !important;
-        }
-        div[data-testid="delete-player"] > button,
-        div[data-testid="delete-court"] > button {
-            background-color: #d9534f;
-            color: white;
-            font-weight: bold;
-            border-radius: 0.5rem;
-        }
+    html, body, [class*="css"]  {
+        font-size: 20px !important;
+    }
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        background-color: #121212;
+        color: #ffffff;
+    }
+    h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
+        color: #ffffff !important;
+    }
+    .stButton>button {
+        background-color: #32CD32;
+        color: white;
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 18px;
+    }
+    input[type=number] {
+        font-size: 20px !important;
+    }
+    .stTextInput input {
+        font-size: 20px !important;
+    }
+    .stSelectbox>div>div {
+        font-size: 20px !important;
+    }
+    .stCheckbox>label>div {
+        font-size: 20px !important;
+    }
+    div[data-testid="delete-player"] > button,
+    div[data-testid="delete-court"] > button {
+        background-color: #d9534f;
+        color: white;
+        font-weight: bold;
+        border-radius: 0.5rem;
+    }
     </style>
     """, unsafe_allow_html=True)
 
