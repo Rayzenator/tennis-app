@@ -143,6 +143,12 @@ def app():
         h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
             color: #ffffff !important;
         }
+        .stSelectbox > div > div {
+            color: #000000 !important; /* Black text for dropdown */
+        }
+        .stSelectbox {
+            background-color: #ffffff !important; /* Light background for dropdown */
+        }
         div[data-testid="delete-player"] > button,
         div[data-testid="delete-court"] > button {
             background-color: #d9534f;
@@ -159,15 +165,8 @@ def app():
         section[data-testid="stSidebar"] div {
             color: #000000 !important;
         }
-        input[type="text"],
-        input[type="number"],
-        textarea,
-        .stTextInput input {
-            background-color: #222222 !important;
-            color: #ffffff !important;
-            border: 1px solid #555555;
-        }
     </style>
+    
     """, unsafe_allow_html=True)
 
     st.title("🎾 Tennis Round-Robin Scheduler")
