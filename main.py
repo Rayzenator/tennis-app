@@ -140,7 +140,13 @@ def app():
             font-size: 20px !important;
             color: #ffffff;
         }
-        h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
+        h1, h2, h3, h4, h5, h6,
+        div[data-testid="stMarkdownContainer"] h1,
+        div[data-testid="stMarkdownContainer"] h2,
+        div[data-testid="stMarkdownContainer"] h3,
+        div[data-testid="stMarkdownContainer"] h4,
+        div[data-testid="stMarkdownContainer"] h5,
+        div[data-testid="stMarkdownContainer"] h6 {
             color: #ffffff !important;
         }
         div[data-testid="delete-player"] > button,
