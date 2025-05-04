@@ -148,6 +148,18 @@ def app():
         .stCheckbox>label>div {
             font-size: 20px !important;
         }
+        .stSidebar > .sidebar-content {
+            background-color: #121212;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #E0E0E0 !important;  /* Lighter heading text */
+        }
+        .stTextInput label, .stSelectbox label, .stCheckbox label {
+            color: #B0B0B0 !important;  /* Lighter label text */
+        }
+        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
+            color: #E0E0E0 !important;
+        }
     </style>
     """, unsafe_allow_html=True)
 
