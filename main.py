@@ -120,14 +120,15 @@ def update_scores(nightly_df, all_time_df, submitted_scores):
 def app():
     st.markdown("""
     <style>
+        /* General styling for the app */
         html, body, [class*="css"] {
             font-size: 20px !important;
         }
         .block-container {
             padding-top: 2rem;
             padding-bottom: 2rem;
-            background-color: #000000;
-            color: #ffffff;
+            background-color: #000000;  /* Dark background for the main app screen */
+            color: #ffffff;  /* White text on dark background */
         }
         .stButton>button {
             background-color: #32CD32;
@@ -136,19 +137,27 @@ def app():
             padding: 0.5rem 1rem;
             font-size: 18px;
         }
-        input[type=number], .stTextInput input, .stSelectbox>div>div, .stCheckbox>label>div {
-            font-size: 20px !important;
-            color: #ffffff;
-        }
+        /* Set white text color for headings on the main app screen */
         h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
             color: #ffffff !important;
         }
+        /* Input and Select boxes with black text on light backgrounds */
+        input[type=number], .stTextInput input, .stSelectbox>div>div, .stCheckbox>label>div {
+            font-size: 20px !important;
+            color: #000000;  /* Black text for input boxes and select boxes */
+            background-color: #ffffff !important; /* White background for input/select boxes */
+        }
         .stSelectbox > div > div {
-            color: #000000 !important; /* Black text for dropdown */
+            color: #000000 !important; /* Black text for dropdown options */
         }
-        .stSelectbox {
-            background-color: #ffffff !important; /* Light background for dropdown */
+        /* Set bright yellow color for Stopwatch text and icon */
+        .stTextInput, .stButton, .stCheckbox, .stSelectbox {
+            color: #ff0; /* Bright yellow text for Stopwatch elements */
         }
+        .stIcon {
+            color: #ff0;  /* Bright yellow color for Stopwatch icons */
+        }
+        /* Red buttons for deleting players and courts */
         div[data-testid="delete-player"] > button,
         div[data-testid="delete-court"] > button {
             background-color: #d9534f;
@@ -156,6 +165,7 @@ def app():
             font-weight: bold;
             border-radius: 0.5rem;
         }
+        /* Sidebar styling */
         section[data-testid="stSidebar"] {
             background-color: #d3d3d3 !important;
             color: #000000 !important;
@@ -164,6 +174,15 @@ def app():
         section[data-testid="stSidebar"] span,
         section[data-testid="stSidebar"] div {
             color: #000000 !important;
+        }
+        /* Change the heading text color in the sidebar */
+        section[data-testid="stSidebar"] h2 {
+            color: #000000 !important; /* Black color for the "Manage Players and Tabs" heading */
+        }
+        /* Sidebar Tab - Keep same format but change tab color */
+        .stTabs>div>div {
+            background-color: #ffff00 !important; /* Bright yellow background for the tabs */
+            color: #000000 !important; /* Black text for tabs */
         }
     </style>
     
