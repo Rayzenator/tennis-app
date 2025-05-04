@@ -119,78 +119,78 @@ def update_scores(nightly_df, all_time_df, submitted_scores):
 
 def app():
     st.markdown("""
-    <style>
-        /* General styling for the app */
-        html, body, [class*="css"] {
-            font-size: 20px !important;
-        }
-        .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-            background-color: #000000;  /* Dark background for the main app screen */
-            color: #ffffff;  /* White text on dark background */
-        }
-        .stButton>button {
-            background-color: #32CD32;
-            color: white;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1rem;
-            font-size: 18px;
-        }
+        <style>
+            /* General styling for the app */
+            html, body, [class*="css"] {
+                font-size: 20px !important;
+            }
+            .block-container {
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+                background-color: #000000;  /* Dark background for the main app screen */
+                color: #ffffff;  /* White text on dark background */
+            }
+            .stButton>button {
+                background-color: #32CD32;
+                color: white;
+                border-radius: 0.5rem;
+                padding: 0.5rem 1rem;
+                font-size: 18px;
+            }
+            
+            /* Set white text color for headings on the main app screen */
+            h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
+                color: #ffffff !important;
+            }
         
-        /* Set white text color for headings on the main app screen */
-        h1, h2, h3, h4, h5, h6, .stMarkdown h3 {
-            color: #ffffff !important;
-        }
-    
-        /* Specific styling for labels in input components, select boxes, etc. */
-        /* More specific target for labels (Select Players, Courts, Match Type, etc.) */
-        .stTextInput label, .stSelectbox label, .stCheckbox label, .stMultiselect label {
-            color: #ffffff !important;  /* White text for all labels */
-        }
-    
-        /* Ensure black text for inputs and selects (on light backgrounds) */
-        input[type=number], .stTextInput input, .stSelectbox>div>div, .stCheckbox>label>div, .stMultiselect>div>div {
-            font-size: 20px !important;
-            color: #000000 !important;  /* Black text for inputs and selects */
-            background-color: #ffffff !important; /* White background for inputs/selects */
-        }
-    
-        /* Set bright yellow color for "Set Stopwatch" text */
-        .stTextInput div[role="alert"], .stTextInput div[role="button"], .stTextInput span, .stTextInput i {
-            color: #ff0 !important;  /* Force bright yellow for stopwatch text and icons */
-        }
-    
-        /* Red buttons for deleting players and courts */
-        div[data-testid="delete-player"] > button,
-        div[data-testid="delete-court"] > button {
-            background-color: #d9534f;
-            color: white;
-            font-weight: bold;
-            border-radius: 0.5rem;
-        }
-    
-        /* Sidebar styling */
-        section[data-testid="stSidebar"] {
-            background-color: #d3d3d3 !important;
-            color: #000000 !important;
-        }
-        section[data-testid="stSidebar"] label,
-        section[data-testid="stSidebar"] span,
-        section[data-testid="stSidebar"] div {
-            color: #000000 !important;
-        }
-        /* Change the heading text color in the sidebar */
-        section[data-testid="stSidebar"] h2 {
-            color: #000000 !important; /* Black color for the "Manage Players and Tabs" heading */
-        }
-    
-        /* Sidebar Tab - Keep same format but change tab color */
-        .stTabs>div>div {
-            background-color: #ffff00 !important; /* Bright yellow background for the tabs */
-            color: #000000 !important; /* Black text for tabs */
-        }
-    </style>
+            /* Specific styling for labels in input components, select boxes, etc. */
+            /* More specific target for labels (Select Players, Courts, Match Type, etc.) */
+            .stTextInput label, .stSelectbox label, .stCheckbox label, .stMultiselect label {
+                color: #ffffff !important;  /* White text for all labels */
+            }
+        
+            /* Ensure black text for inputs and selects (on light backgrounds) */
+            input[type=number], .stTextInput input, .stSelectbox>div>div, .stCheckbox>label>div, .stMultiselect>div>div {
+                font-size: 20px !important;
+                color: #000000 !important;  /* Black text for inputs and selects */
+                background-color: #ffffff !important; /* White background for inputs/selects */
+            }
+        
+            /* Set bright yellow color for "Set Stopwatch" text */
+            .stTextInput div[role="alert"], .stTextInput div[role="button"], .stTextInput span, .stTextInput i {
+                color: #ff0 !important;  /* Force bright yellow for stopwatch text and icons */
+            }
+        
+            /* Red buttons for deleting players and courts */
+            div[data-testid="delete-player"] > button,
+            div[data-testid="delete-court"] > button {
+                background-color: #d9534f;
+                color: white;
+                font-weight: bold;
+                border-radius: 0.5rem;
+            }
+        
+            /* Sidebar styling */
+            section[data-testid="stSidebar"] {
+                background-color: #d3d3d3 !important;
+                color: #000000 !important;
+            }
+            section[data-testid="stSidebar"] label,
+            section[data-testid="stSidebar"] span,
+            section[data-testid="stSidebar"] div {
+                color: #000000 !important;
+            }
+            /* Change the heading text color in the sidebar */
+            section[data-testid="stSidebar"] h2 {
+                color: #000000 !important; /* Black color for the "Manage Players and Tabs" heading */
+            }
+        
+            /* Sidebar Tab - Keep same format but change tab color */
+            .stTabs>div>div {
+                background-color: #ffff00 !important; /* Bright yellow background for the tabs */
+                color: #000000 !important; /* Black text for tabs */
+            }
+        </style>
     
     """, unsafe_allow_html=True)
 
