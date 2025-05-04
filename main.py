@@ -149,7 +149,8 @@ def app():
             font-size: 20px !important;
         }
         .stSidebar > .sidebar-content {
-            background-color: #333333;
+            background-color: #ffff00;
+            color: #000000;
         }
         
         /* General headings (h1 to h6) on dark background */
