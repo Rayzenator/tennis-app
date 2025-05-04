@@ -172,6 +172,8 @@ def app():
 
     with st.sidebar:
         st.header("Manage Players & Courts")
+        
+        # Add Player
         new_player = st.text_input("Add Player")
         if st.button("Add Player") and new_player:
             if new_player not in players:
@@ -180,6 +182,14 @@ def app():
             else:
                 st.warning("Player already exists!")
 
+        # Delete Player
+        delete_player = st.selectbox("Delete Player", players)
+        if st.button("Delete Player") and delete_player:
+            players.remove(delete_player)
+            save_json(PLAYER_FILE, players)
+            st.success(f"Player {delete_player} has been removed.")
+
+        # Add Court
         new_court = st.text_input("Add Court")
         if st.button("Add Court") and new_court:
             if new_court not in courts:
@@ -188,11 +198,25 @@ def app():
             else:
                 st.warning("Court already exists!")
 
+        # Delete Court
+        delete_court = st.selectbox("Delete Court", courts)
+        if st.button("Delete Court") and delete_court:
+            courts.remove(delete_court)
+            save_json(COURT_FILE, courts)
+            st.success(f"Court {delete_court} has been removed.")
+
     # Ensure no duplicates when selecting players and courts
     selected_players = st.multiselect("Select Players for This Night", sorted(set(players)))
     selected_courts = st.multiselect("Select Active Courts", sorted(set(courts)))
     match_type = st.selectbox("Match Type", ["Singles", "Doubles"])
     format_type = st.selectbox("Format", ["Fast Four", "Timed"])
+    
+    if format_type == "Timed":
+        match_time = st.slider("Select Match Time (minutes)", min_value=1, max_value=60, value=15)
+        st.info(f"Set stopwatch to {match_time} minutes.")
+    else:
+        match_time = None  # No time set for Fast Four
+
     allow_american = st.checkbox("Allow American Doubles")
 
     if st.button("Generate Round"):
